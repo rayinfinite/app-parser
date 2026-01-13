@@ -37,13 +37,17 @@ public final class ManifestXmlDecoder {
     }
 
     public static String decodeFromApkWithResources(File apkFile) throws IOException {
+        return decodeFromApkWithResources(apkFile, true);
+    }
+
+    public static String decodeFromApkWithResources(File apkFile, boolean resolveToValue) throws IOException {
         Map<String, byte[]> files = readFiles(apkFile, MANIFEST_PATH, ResourceTableParser.RESOURCE_FILE);
         byte[] manifestBytes = files.get(MANIFEST_PATH);
         if (manifestBytes == null) {
             throw new ManifestXmlException("Manifest file not found: " + MANIFEST_PATH);
         }
         byte[] resourcesBytes = files.get(ResourceTableParser.RESOURCE_FILE);
-        return decodeFromManifest(manifestBytes, ResourceTableParser.fromResources(resourcesBytes));
+        return decodeFromManifest(manifestBytes, ResourceTableParser.fromResources(resourcesBytes, resolveToValue));
     }
 
     public static String decodeFromApk(File apkFile, ResourceResolver resolver) throws IOException {

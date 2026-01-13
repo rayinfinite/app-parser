@@ -8,7 +8,7 @@ import re
 from pathlib import Path
 
 # 要处理的文件名列表（与脚本同目录）
-FILES = ["1.xml", "2.xml"]
+FILES = ["2.xml"]
 
 # 匹配开始标签（排除注释、CDATA、处理指令和DOCTYPE）
 TAG_RE = re.compile(r'<\s*(?P<tag>[A-Za-z_:][^\s/>]*)\s*(?P<attrs>[^<>]*?)\s*(?P<self>/?)>')

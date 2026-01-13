@@ -21,19 +21,25 @@ public final class ResourceTableParser {
     public static final String RESOURCE_FILE = "resources.arsc";
 
     public static ManifestXmlDecoder.ResourceResolver fromResources(byte[] resourcesBytes) {
+        return fromResources(resourcesBytes, true);
+    }
+
+    public static ManifestXmlDecoder.ResourceResolver fromResources(byte[] resourcesBytes, boolean resolveToValue) {
         if (resourcesBytes == null) {
             return new EmptyResolver();
         }
         ResourceTable table = new Parser(resourcesBytes).parse();
-        return new TableResolver(table);
+        return new TableResolver(table, resolveToValue);
     }
 
     private static final class TableResolver implements ManifestXmlDecoder.ResourceResolver {
         private final ResourceTable table;
         private final Locale locale = Locale.getDefault();
+        private final boolean resolveToValue;
 
-        private TableResolver(ResourceTable table) {
+        private TableResolver(ResourceTable table, boolean resolveToValue) {
             this.table = table;
+            this.resolveToValue = resolveToValue;
         }
 
         @Override
@@ -45,6 +51,9 @@ public final class ResourceTableParser {
             ResourceEntry entry = table.selectEntry(resId, locale);
             if (entry == null) {
                 return null;
+            }
+            if (!resolveToValue) {
+                return "@" + entry.typeName + "/" + entry.key;
             }
             String value = resolveString(entry, new HashSet<Long>());
             if (value != null) {

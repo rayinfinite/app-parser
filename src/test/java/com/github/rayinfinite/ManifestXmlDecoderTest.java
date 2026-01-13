@@ -52,7 +52,7 @@ public class ManifestXmlDecoderTest {
         String apkName = "Twitter_v7.93.2.apk";
         File apkFile = resourceFile(apkName);
 
-        String actual = ManifestXmlDecoder.decodeFromApkWithResources(apkFile);
+        String actual = ManifestXmlDecoder.decodeFromApkWithResources(apkFile, false);
         String actualTwitter = resourceFileString("real.xml");
         Assertions.assertEquals(actualTwitter, actual, "Manifest mismatch: " + apkName);
     }
