@@ -42,11 +42,9 @@ public final class ResourceTableParser {
             if (entry == null) {
                 return null;
             }
-            if ("string".equals(entry.typeName)) {
-                String value = resolveString(entry, new HashSet<Long>());
-                if (value != null) {
-                    return value;
-                }
+            String value = resolveString(entry, new HashSet<Long>());
+            if (value != null) {
+                return value;
             }
             return "@" + entry.typeName + "/" + entry.key;
         }
@@ -72,10 +70,7 @@ public final class ResourceTableParser {
                 if (refEntry == null) {
                     return null;
                 }
-                if ("string".equals(refEntry.typeName)) {
-                    return resolveString(refEntry, seen);
-                }
-                return "@" + refEntry.typeName + "/" + refEntry.key;
+                return resolveString(refEntry, seen);
             }
             return null;
         }
