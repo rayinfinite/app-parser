@@ -13,7 +13,9 @@ import java.nio.ByteBuffer;
 import java.nio.ByteOrder;
 import java.nio.charset.StandardCharsets;
 import java.util.ArrayList;
+import java.util.HashMap;
 import java.util.List;
+import java.util.Map;
 import java.util.zip.ZipEntry;
 import java.util.zip.ZipFile;
 
@@ -26,23 +28,51 @@ public final class ManifestXmlDecoder {
     }
 
     public static String decodeFromApkWithResources(File apkFile) throws IOException {
-        return decodeFromApk(apkFile, ResourceTableParser.fromApk(apkFile));
+        Map<String, byte[]> files = readFiles(apkFile, MANIFEST_PATH, ResourceTableParser.RESOURCE_FILE);
+        byte[] manifestBytes = files.get(MANIFEST_PATH);
+        if (manifestBytes == null) {
+            throw new ManifestXmlException("Manifest file not found: " + MANIFEST_PATH);
+        }
+        byte[] resourcesBytes = files.get(ResourceTableParser.RESOURCE_FILE);
+        return decodeFromManifest(manifestBytes, ResourceTableParser.fromResources(resourcesBytes));
     }
 
     public static String decodeFromApk(File apkFile, ResourceResolver resolver) throws IOException {
         if (apkFile == null) {
             throw new IllegalArgumentException("apkFile is null");
         }
+        Map<String, byte[]> files = readFiles(apkFile, MANIFEST_PATH);
+        byte[] manifestBytes = files.get(MANIFEST_PATH);
+        if (manifestBytes == null) {
+            throw new ManifestXmlException("Manifest file not found: " + MANIFEST_PATH);
+        }
+        return decodeFromManifest(manifestBytes, resolver);
+    }
+
+    public static Map<String, byte[]> readFiles(File apkFile, String... paths) throws IOException {
+        if (apkFile == null) {
+            throw new IllegalArgumentException("apkFile is null");
+        }
+        Map<String, byte[]> result = new HashMap<>();
+        if (paths == null || paths.length == 0) {
+            return result;
+        }
         try (ZipFile zipFile = new ZipFile(apkFile)) {
-            ZipEntry entry = zipFile.getEntry(MANIFEST_PATH);
-            if (entry == null) {
-                throw new ManifestXmlException("Manifest file not found: " + MANIFEST_PATH);
-            }
-            try (InputStream inputStream = zipFile.getInputStream(entry)) {
-                byte[] manifestBytes = readAllBytes(inputStream);
-                return decodeFromManifest(manifestBytes, resolver);
+            for (String path : paths) {
+                if (path == null) {
+                    continue;
+                }
+                ZipEntry entry = zipFile.getEntry(path);
+                if (entry == null) {
+                    result.put(path, null);
+                    continue;
+                }
+                try (InputStream inputStream = zipFile.getInputStream(entry)) {
+                    result.put(path, readAllBytes(inputStream));
+                }
             }
         }
+        return result;
     }
 
     public static String decodeFromManifest(byte[] manifestBytes) {

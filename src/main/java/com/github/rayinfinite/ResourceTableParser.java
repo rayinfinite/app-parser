@@ -5,10 +5,6 @@ import lombok.Getter;
 import lombok.NoArgsConstructor;
 import lombok.RequiredArgsConstructor;
 
-import java.io.ByteArrayOutputStream;
-import java.io.File;
-import java.io.IOException;
-import java.io.InputStream;
 import java.nio.ByteBuffer;
 import java.nio.ByteOrder;
 import java.nio.charset.StandardCharsets;
@@ -19,28 +15,10 @@ import java.util.List;
 import java.util.Locale;
 import java.util.Map;
 import java.util.Set;
-import java.util.zip.ZipEntry;
-import java.util.zip.ZipFile;
 
 @NoArgsConstructor(access = AccessLevel.PRIVATE)
 public final class ResourceTableParser {
     public static final String RESOURCE_FILE = "resources.arsc";
-
-    public static ManifestXmlDecoder.ResourceResolver fromApk(File apkFile) throws IOException {
-        if (apkFile == null) {
-            throw new IllegalArgumentException("apkFile is null");
-        }
-        try (ZipFile zipFile = new ZipFile(apkFile)) {
-            ZipEntry entry = zipFile.getEntry(RESOURCE_FILE);
-            if (entry == null) {
-                return new EmptyResolver();
-            }
-            try (InputStream inputStream = zipFile.getInputStream(entry)) {
-                byte[] arscBytes = readAllBytes(inputStream);
-                return fromResources(arscBytes);
-            }
-        }
-    }
 
     public static ManifestXmlDecoder.ResourceResolver fromResources(byte[] resourcesBytes) {
         if (resourcesBytes == null) {
@@ -287,6 +265,7 @@ public final class ResourceTableParser {
                     position(buffer, begin + headerSize);
                     return typeHeader;
                 case ChunkType.TABLE_LIBRARY:
+                case ChunkType.UNKNOWN:
                 case ChunkType.NULL:
                     position(buffer, begin + headerSize);
                     return new ChunkHeader(chunkType, headerSize, chunkSize);
@@ -683,6 +662,7 @@ public final class ResourceTableParser {
         private static final int TABLE_TYPE = 0x0201;
         private static final int TABLE_TYPE_SPEC = 0x0202;
         private static final int TABLE_LIBRARY = 0x0203;
+        private static final int UNKNOWN = 0x0204;
     }
 
     private static ResourceValue readResValue(ByteBuffer buffer) {
@@ -787,14 +767,4 @@ public final class ResourceTableParser {
         return (int) value;
     }
 
-    private static byte[] readAllBytes(InputStream inputStream) throws IOException {
-        ByteArrayOutputStream outputStream = new ByteArrayOutputStream();
-        byte[] buffer = new byte[8192];
-        int read;
-        while ((read = inputStream.read(buffer)) != -1) {
-            outputStream.write(buffer, 0, read);
-        }
-        return outputStream.toByteArray();
-    }
 }
-
