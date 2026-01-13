@@ -53,7 +53,7 @@ public class ManifestXmlDecoderTest {
         File apkFile = resourceFile(apkName);
 
         String actual = ManifestXmlDecoder.decodeFromApkWithResources(apkFile);
-        String actualTwitter = resourceFileString("OldTwitterAndroidManifest.xml");
+        String actualTwitter = resourceFileString("real.xml");
         Assertions.assertEquals(actualTwitter, actual, "Manifest mismatch: " + apkName);
     }
 

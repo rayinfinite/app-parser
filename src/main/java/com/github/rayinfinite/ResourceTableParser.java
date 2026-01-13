@@ -38,6 +38,10 @@ public final class ResourceTableParser {
 
         @Override
         public String resolveReference(long resId) {
+            String frameworkStyle = FrameworkResource.resolveAndroidStyle(resId);
+            if (frameworkStyle != null) {
+                return frameworkStyle;
+            }
             ResourceEntry entry = table.selectEntry(resId, locale);
             if (entry == null) {
                 return null;
