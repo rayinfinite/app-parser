@@ -22,6 +22,15 @@ import java.util.zip.ZipFile;
 @NoArgsConstructor(access = AccessLevel.PRIVATE)
 public final class ManifestXmlDecoder {
     public static final String MANIFEST_PATH = "AndroidManifest.xml";
+    private static volatile boolean attributeValueMappingEnabled = true;
+
+    public static boolean isAttributeValueMappingEnabled() {
+        return attributeValueMappingEnabled;
+    }
+
+    public static void setAttributeValueMappingEnabled(boolean enabled) {
+        attributeValueMappingEnabled = enabled;
+    }
 
     public static String decodeFromApk(File apkFile) throws IOException {
         return decodeFromApk(apkFile, null);
@@ -231,6 +240,9 @@ public final class ManifestXmlDecoder {
             ResValue resValue = readResValue(buffer);
 
             String value = rawValue != null ? rawValue : resValue.toStringValue(stringPool, resolver);
+            if (attributeValueMappingEnabled) {
+                value = AttributeValueMapper.mapIfNeeded(name, value);
+            }
             return new XmlAttribute(namespace, name, value);
         }
 
