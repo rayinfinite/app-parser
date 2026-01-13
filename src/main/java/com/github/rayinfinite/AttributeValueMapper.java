@@ -22,14 +22,18 @@ final class AttributeValueMapper {
     }
 
     static String mapIfNeeded(String attributeName, String value) {
-        if (attributeName == null || value == null) {
-            return value;
-        }
-        if (!isNumeric(value)) {
+        if (attributeName == null || value == null || attributeName.isEmpty()) {
             return value;
         }
         try {
-            int intValue = Integer.parseInt(value);
+            int intValue;
+            if (isNumeric(value)) {
+                intValue = Integer.parseInt(value);
+            } else if (isHex(value)) {
+                intValue = Integer.parseInt(value.substring(2), 16);
+            } else {
+                return value;
+            }
             Function<Integer, String> mapper = MAPPERS.get(attributeName);
             if (mapper == null) {
                 return value;
@@ -226,11 +230,21 @@ final class AttributeValueMapper {
     }
 
     private static boolean isNumeric(String value) {
-        if (value == null || value.isEmpty()) {
+        return value.chars().allMatch(Character::isDigit);
+    }
+
+    public static boolean isHex(String value) {
+        // 去除可选前缀
+        if (value.startsWith("0x") || value.startsWith("0X")) {
+            value = value.substring(2);
+        }
+        if (value.isEmpty()) {
             return false;
         }
+        // 检查每个字符是否为 [0-9a-fA-F]
         for (int i = 0; i < value.length(); i++) {
-            if (!Character.isDigit(value.charAt(i))) {
+            char c = value.charAt(i);
+            if ((c < '0' || c > '9') && (c < 'a' || c > 'f') && (c < 'A' || c > 'F')) {
                 return false;
             }
         }
