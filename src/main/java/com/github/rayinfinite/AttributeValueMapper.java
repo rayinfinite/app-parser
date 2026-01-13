@@ -1,20 +1,21 @@
 package com.github.rayinfinite;
 
 import java.util.ArrayList;
-import java.util.HashSet;
 import java.util.List;
-import java.util.Set;
+import java.util.Map;
+import java.util.concurrent.ConcurrentHashMap;
+import java.util.function.Function;
 
 final class AttributeValueMapper {
-    private static final Set<String> INT_ATTRIBUTES = new HashSet<String>();
+    private static final Map<String, Function<Integer, String>> MAPPERS = new ConcurrentHashMap<>();
 
     static {
-        INT_ATTRIBUTES.add("screenOrientation");
-        INT_ATTRIBUTES.add("configChanges");
-        INT_ATTRIBUTES.add("windowSoftInputMode");
-        INT_ATTRIBUTES.add("launchMode");
-        INT_ATTRIBUTES.add("installLocation");
-        INT_ATTRIBUTES.add("protectionLevel");
+        register("screenOrientation", AttributeValueMapper::getScreenOrientation);
+        register("configChanges", AttributeValueMapper::getConfigChanges);
+        register("windowSoftInputMode", AttributeValueMapper::getWindowSoftInputMode);
+        register("launchMode", AttributeValueMapper::getLaunchMode);
+        register("installLocation", AttributeValueMapper::getInstallLocation);
+        register("protectionLevel", AttributeValueMapper::getProtectionLevel);
     }
 
     private AttributeValueMapper() {
@@ -24,90 +25,78 @@ final class AttributeValueMapper {
         if (attributeName == null || value == null) {
             return value;
         }
-        if (!INT_ATTRIBUTES.contains(attributeName)) {
-            return value;
-        }
         if (!isNumeric(value)) {
             return value;
         }
         try {
             int intValue = Integer.parseInt(value);
-            if ("screenOrientation".equals(attributeName)) {
-                return getScreenOrientation(intValue);
+            Function<Integer, String> mapper = MAPPERS.get(attributeName);
+            if (mapper == null) {
+                return value;
             }
-            if ("configChanges".equals(attributeName)) {
-                return getConfigChanges(intValue);
-            }
-            if ("windowSoftInputMode".equals(attributeName)) {
-                return getWindowSoftInputMode(intValue);
-            }
-            if ("launchMode".equals(attributeName)) {
-                return getLaunchMode(intValue);
-            }
-            if ("installLocation".equals(attributeName)) {
-                return getInstallLocation(intValue);
-            }
-            if ("protectionLevel".equals(attributeName)) {
-                return getProtectionLevel(intValue);
-            }
+            return mapper.apply(intValue);
         } catch (RuntimeException ignore) {
             return value;
         }
-        return value;
     }
 
-    private static String getScreenOrientation(int value) {
-        switch (value) {
-            case 0x00000003:
-                return "behind";
-            case 0x0000000a:
-                return "fullSensor";
-            case 0x0000000d:
-                return "fullUser";
-            case 0x00000000:
-                return "landscape";
-            case 0x0000000e:
-                return "locked";
-            case 0x00000005:
-                return "nosensor";
-            case 0x00000001:
-                return "portrait";
-            case 0x00000008:
-                return "reverseLandscape";
-            case 0x00000009:
-                return "reversePortrait";
-            case 0x00000004:
-                return "sensor";
-            case 0x00000006:
-                return "sensorLandscape";
-            case 0x00000007:
-                return "sensorPortrait";
-            case 0xffffffff:
-                return "unspecified";
-            case 0x00000002:
-                return "user";
-            case 0x0000000b:
-                return "userLandscape";
-            case 0x0000000c:
-                return "userPortrait";
-            default:
-                return "ScreenOrientation:" + Integer.toHexString(value);
+    static void register(String attributeName, Function<Integer, String> mapper) {
+        if (attributeName == null || mapper == null) {
+            return;
         }
+        MAPPERS.put(attributeName, mapper);
+    }
+
+    private static final String[] SCREEN_ORIENTATION = new String[]{
+            "landscape",
+            "portrait",
+            "user",
+            "behind",
+            "sensor",
+            "nosensor",
+            "sensorLandscape",
+            "sensorPortrait",
+            "reverseLandscape",
+            "reversePortrait",
+            "fullSensor",
+            "userLandscape",
+            "userPortrait",
+            "fullUser",
+            "locked"
+    };
+
+    private static String getScreenOrientation(int value) {
+        if (value == 0xffffffff) {
+            return "unspecified";
+        }
+        if (value >= 0 && value < SCREEN_ORIENTATION.length) {
+            return SCREEN_ORIENTATION[value];
+        }
+        return "ScreenOrientation:" + Integer.toHexString(value);
+    }
+
+    private static final String[] LAUNCH_MODE = new String[]{
+            "standard",
+            "singleTop",
+            "singleTask",
+            "singleInstance"
+    };
+
+    private static final String[] INSTALL_LOCATION = new String[]{
+            "auto",
+            "internalOnly",
+            "preferExternal"
+    };
+
+    private static String mapByIndex(String[] values, int value, String fallbackPrefix) {
+        if (value >= 0 && value < values.length) {
+            return values[value];
+        }
+        return fallbackPrefix + Integer.toHexString(value);
     }
 
     private static String getLaunchMode(int value) {
-        switch (value) {
-            case 0x00000000:
-                return "standard";
-            case 0x00000001:
-                return "singleTop";
-            case 0x00000002:
-                return "singleTask";
-            case 0x00000003:
-                return "singleInstance";
-            default:
-                return "LaunchMode:" + Integer.toHexString(value);
-        }
+        return mapByIndex(LAUNCH_MODE, value, "LaunchMode:");
     }
 
     private static String getConfigChanges(int value) {
@@ -219,16 +208,7 @@ final class AttributeValueMapper {
     }
 
     private static String getInstallLocation(int value) {
-        switch (value) {
-            case 0:
-                return "auto";
-            case 1:
-                return "internalOnly";
-            case 2:
-                return "preferExternal";
-            default:
-                return "installLocation:" + Integer.toHexString(value);
-        }
+        return mapByIndex(INSTALL_LOCATION, value, "installLocation:");
     }
 
     private static boolean isNumeric(String value) {
