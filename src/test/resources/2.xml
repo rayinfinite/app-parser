@@ -9,9 +9,9 @@
         android:label="@string/permlab_readTwitterData"
         android:name="com.twitter.android.permission.READ_DATA"
         android:permissionGroup="android.permission-group.PERSONAL_INFO"
-        android:protectionLevel="0x2" />
+        android:protectionLevel="signature" />
     <permission android:name="com.twitter.android.permission.RESTRICTED"
-        android:protectionLevel="0x2" />
+        android:protectionLevel="signature" />
     <uses-permission android:name="com.twitter.android.permission.RESTRICTED" />
     <uses-permission android:name="android.permission.INTERNET" />
     <uses-permission android:name="android.permission.ACCESS_NETWORK_STATE" />
@@ -85,13 +85,14 @@
         <meta-data android:name="google_analytics_adid_collection_enabled" android:value="false" />
         <activity android:name="com.twitter.android.LoginActivity"
             android:theme="@style/Theme.Login" />
-        <activity android:configChanges="0x4a0" android:label="@string/login_challenge"
+        <activity android:configChanges="keyboardHidden|orientation|screenSize"
+            android:label="@string/login_challenge"
             android:name="com.twitter.android.LoginChallengeActivity" />
         <activity
             android:name="com.twitter.android.profilecompletionmodule.ProfileCompletionFlowActivity"
-            android:windowSoftInputMode="0x12" />
-        <activity android:configChanges="0x4a0" android:finishOnTaskLaunch="true"
-            android:label="@string/reset_password"
+            android:windowSoftInputMode="stateHidden|adjustResize" />
+        <activity android:configChanges="keyboardHidden|orientation|screenSize"
+            android:finishOnTaskLaunch="true" android:label="@string/reset_password"
             android:name="com.twitter.android.PasswordResetActivity" />
         <activity android:excludeFromRecents="true"
             android:label="@string/settings_notifications_timeline"
@@ -104,9 +105,9 @@
             android:name="com.twitter.android.AdvancedDiscoSettingsActivity" />
         <activity android:excludeFromRecents="true" android:label="@string/change_screen_name"
             android:name="com.twitter.android.ChangeScreenNameActivity"
-            android:windowSoftInputMode="0x10" />
+            android:windowSoftInputMode="adjustResize" />
         <activity android:launchMode="singleTop" android:name="com.twitter.app.main.MainActivity"
-            android:theme="@style/Theme.Main" android:windowSoftInputMode="0x10" />
+            android:theme="@style/Theme.Main" android:windowSoftInputMode="adjustResize" />
         <activity android:name="com.twitter.app.users.UsersActivity" />
         <activity android:name="com.twitter.android.BlockedAccountsActivity"
             android:theme="@style/Theme.NoToolbarShadowAndElevation" />
@@ -156,7 +157,7 @@
         <activity android:label="@string/tweet_title"
             android:name="com.twitter.composer.ComposerActivity"
             android:parentActivityName="com.twitter.app.main.MainActivity"
-            android:theme="@style/Theme.TweetComposer" android:windowSoftInputMode="0x10">
+            android:theme="@style/Theme.TweetComposer" android:windowSoftInputMode="adjustResize">
             <intent-filter android:label="@string/tweet_title">
                 <action android:name="android.intent.action.SEND" />
                 <category android:name="android.intent.category.DEFAULT" />
@@ -193,19 +194,19 @@
             android:name="com.twitter.android.client.NotifOnClickBroadcastReceiver" />
         <activity android:name="com.twitter.android.TweetDetailActivity"
             android:parentActivityName="com.twitter.app.main.MainActivity"
-            android:theme="@style/Theme" android:windowSoftInputMode="0x10" />
+            android:theme="@style/Theme" android:windowSoftInputMode="adjustResize" />
         <activity android:name="com.twitter.android.RootTweetDetailActivity"
-            android:theme="@style/Theme" android:windowSoftInputMode="0x10" />
+            android:theme="@style/Theme" android:windowSoftInputMode="adjustResize" />
         <activity android:launchMode="singleTop" android:name="com.twitter.app.dm.RootDMActivity"
             android:parentActivityName="com.twitter.app.main.MainActivity"
-            android:windowSoftInputMode="0x12">
+            android:windowSoftInputMode="stateHidden|adjustResize">
             <meta-data android:name="android.support.PARENT_ACTIVITY"
                 android:value="com.twitter.app.main.MainActivity" />
         </activity>
         <activity android:label="@string/label_direct_message"
             android:name="com.twitter.app.dm.DMActivity"
             android:parentActivityName="com.twitter.app.dm.RootDMActivity"
-            android:windowSoftInputMode="0x12">
+            android:windowSoftInputMode="stateHidden|adjustResize">
             <meta-data android:name="android.support.PARENT_ACTIVITY"
                 android:value="com.twitter.app.dm.RootDMActivity" />
             <meta-data android:name="android.service.chooser.chooser_target_service"
@@ -236,19 +237,19 @@
         <activity android:name="com.twitter.app.dm.DMViewGroupParticipantsActivity" />
         <activity android:name="com.twitter.app.dm.DMAvatarFullViewActivity"
             android:theme="@style/Theme.Gallery" />
-        <activity android:configChanges="0x4a0"
+        <activity android:configChanges="keyboardHidden|orientation|screenSize"
             android:name="com.twitter.android.EditProfileActivity"
-            android:windowSoftInputMode="0x12" />
+            android:windowSoftInputMode="stateHidden|adjustResize" />
         <activity android:name="com.twitter.android.EditProfileAvatarActivity"
             android:theme="@style/Theme.Transparent.TransparentStatusBar" />
         <activity android:name="com.twitter.android.ProfilePhotoImageActivity"
             android:theme="@style/Theme.Gallery" />
-        <activity android:configChanges="0x4a0"
+        <activity android:configChanges="keyboardHidden|orientation|screenSize"
             android:name="com.twitter.app.dm.cards.dmfeedbackcard.FeedbackEnterCommentActivity"
-            android:windowSoftInputMode="0x14" />
-        <activity android:configChanges="0x4a0"
+            android:windowSoftInputMode="stateVisible|adjustResize" />
+        <activity android:configChanges="keyboardHidden|orientation|screenSize"
             android:name="com.twitter.android.EditBirthdateActivity"
-            android:windowSoftInputMode="0x12" />
+            android:windowSoftInputMode="stateHidden|adjustResize" />
         <activity android:name="com.twitter.android.ProfileActivity"
             android:parentActivityName="com.twitter.app.main.MainActivity"
             android:theme="@style/Theme.DarkToolBar">
@@ -262,7 +263,7 @@
             </intent-filter>
         </activity>
         <activity android:name="com.twitter.android.ProfilePhotoPromptActivity"
-            android:theme="@style/Theme.Dark" android:windowSoftInputMode="0x20" />
+            android:theme="@style/Theme.Dark" android:windowSoftInputMode="adjustPan" />
         <activity android:excludeFromRecents="true"
             android:name="com.twitter.android.dialog.NotifyRetweetDialogFragmentActivity"
             android:theme="@style/Theme.Dialog.NoTitleBar" />
@@ -287,32 +288,34 @@
         <activity android:name="com.twitter.android.DialogActivity"
             android:theme="@style/Theme.Dialog" />
         <activity android:name="com.twitter.android.PhoneEntrySettingsActivity"
-            android:windowSoftInputMode="0x10" />
+            android:windowSoftInputMode="adjustResize" />
         <activity android:name="com.twitter.android.AddUpdateEmailActivity"
-            android:windowSoftInputMode="0x15" />
-        <activity android:configChanges="0x4a0" android:launchMode="singleTop"
+            android:windowSoftInputMode="stateAlwaysVisible|adjustResize" />
+        <activity android:configChanges="keyboardHidden|orientation|screenSize"
+            android:launchMode="singleTop"
             android:name="com.twitter.android.PhoneVerifySettingsActivity"
-            android:windowSoftInputMode="0x10" />
+            android:windowSoftInputMode="adjustResize" />
         <activity android:name="com.twitter.android.PhoneMTFlowActivity"
-            android:windowSoftInputMode="0x12" />
-        <activity android:configChanges="0x4a0"
+            android:windowSoftInputMode="stateHidden|adjustResize" />
+        <activity android:configChanges="keyboardHidden|orientation|screenSize"
             android:name="com.twitter.android.PhoneOwnershipActivity"
-            android:windowSoftInputMode="0x12" />
+            android:windowSoftInputMode="stateHidden|adjustResize" />
         <activity android:name="com.twitter.app.users.AddressbookContactsActivity" />
         <activity android:name="com.twitter.android.ImageActivity"
             android:theme="@style/Theme.Gallery" />
-        <activity android:configChanges="0x4a0" android:name="com.twitter.android.WebViewActivity" />
-        <activity android:configChanges="0x4a0"
+        <activity android:configChanges="keyboardHidden|orientation|screenSize"
+            android:name="com.twitter.android.WebViewActivity" />
+        <activity android:configChanges="keyboardHidden|orientation|screenSize"
             android:name="com.twitter.android.analytics.TweetAnalyticsWebViewActivity" />
-        <activity android:configChanges="0x4a0"
+        <activity android:configChanges="keyboardHidden|orientation|screenSize"
             android:name="com.twitter.android.ads.AdsInfoWebViewActivity" />
-        <activity android:configChanges="0x4a0"
+        <activity android:configChanges="keyboardHidden|orientation|screenSize"
             android:name="com.twitter.android.ads.AdsCompanionWebViewActivity" />
-        <activity android:configChanges="0x4a0"
+        <activity android:configChanges="keyboardHidden|orientation|screenSize"
             android:name="com.twitter.android.ads.AdsPromoteModeWebViewActivity" />
-        <activity android:configChanges="0x4a0"
+        <activity android:configChanges="keyboardHidden|orientation|screenSize"
             android:name="com.twitter.android.settings.UserTwitterDataWebViewActivity" />
-        <activity android:configChanges="0x4a0"
+        <activity android:configChanges="keyboardHidden|orientation|screenSize"
             android:name="com.twitter.android.browser.BrowserActivity"
             android:theme="@style/Theme.NativeBrowserActivity" />
         <activity android:name="com.twitter.composer.draft.DraftsActivity" />
@@ -326,17 +329,18 @@
             android:theme="@style/Theme.Transparent.Static" />
         <activity android:excludeFromRecents="true" android:label="@string/deactivate_account"
             android:name="com.twitter.android.settings.DeactivateAccountActivity"
-            android:windowSoftInputMode="0x10" />
+            android:windowSoftInputMode="adjustResize" />
         <activity android:excludeFromRecents="true" android:label="@string/deactivate_account"
             android:name="com.twitter.android.settings.ConfirmDeactivateAccountActivity"
-            android:windowSoftInputMode="0x10" />
+            android:windowSoftInputMode="adjustResize" />
         <activity android:excludeFromRecents="true" android:label="@string/account_deactivated"
             android:name="com.twitter.android.settings.AccountDeactivatedActivity"
-            android:windowSoftInputMode="0x10" />
-        <activity android:configChanges="0x4a0" android:excludeFromRecents="true"
+            android:windowSoftInputMode="adjustResize" />
+        <activity android:configChanges="keyboardHidden|orientation|screenSize"
+            android:excludeFromRecents="true"
             android:name="com.twitter.android.ReportFlowWebViewActivity" />
-        <activity android:configChanges="0x4a0" android:excludeFromRecents="true"
-            android:launchMode="singleTask"
+        <activity android:configChanges="keyboardHidden|orientation|screenSize"
+            android:excludeFromRecents="true" android:launchMode="singleTask"
             android:name="com.twitter.android.BouncerWebViewActivity" />
         <activity android:documentLaunchMode="3" android:launchMode="singleTask"
             android:name="com.twitter.app.deeplink.UrlInterpreterActivity" android:noHistory="true">
@@ -540,40 +544,45 @@
             android:theme="@style/Theme.MediaTagActivity" />
         <activity android:label="@string/add_alt_text_title"
             android:name="com.twitter.android.AltTextActivity" android:screenOrientation="portrait"
-            android:windowSoftInputMode="0x10" />
-        <activity android:configChanges="0x6a0" android:label="@string/tweet_title"
+            android:windowSoftInputMode="adjustResize" />
+        <activity android:configChanges="keyboardHidden|orientation|uiMode|screenSize"
+            android:label="@string/tweet_title"
             android:name="com.twitter.android.AVMediaPlayerActivity"
             android:theme="@style/Theme.Gallery.NoTitleBar.FullScreen" />
-        <activity android:configChanges="0xf80" android:label="@string/tweet_title"
+        <activity
+            android:configChanges="orientation|screenLayout|uiMode|screenSize|smallestScreenSize"
+            android:label="@string/tweet_title"
             android:name="com.twitter.android.broadcast.fullscreen.BroadcastFullscreenActivity"
             android:theme="@style/Theme.PeriscopeFullscreen" />
         <activity android:label="@string/tweet_title"
             android:name="com.twitter.android.broadcast.LexLocationPromptActivity"
             android:theme="@style/Theme.Gallery" />
-        <activity android:configChanges="0xd80"
+        <activity android:configChanges="orientation|screenLayout|screenSize|smallestScreenSize"
             android:name="com.twitter.android.broadcast.deeplink.BroadcastDeeplinkActivity"
             android:theme="@style/Theme.PeriscopeFullscreen" />
         <activity android:launchMode="singleTask"
             android:name="com.twitter.periscope.broadcaster.PeriscopePermissionHelperActivity" />
-        <activity android:configChanges="0x6a0" android:label="@string/tweet_title"
-            android:launchMode="singleTask"
+        <activity android:configChanges="keyboardHidden|orientation|uiMode|screenSize"
+            android:label="@string/tweet_title" android:launchMode="singleTask"
             android:name="com.twitter.periscope.broadcaster.PeriscopeBroadcasterActivity"
             android:theme="@style/Theme.PeriscopeBroadcasterActivity" />
-        <activity android:configChanges="0x480" android:launchMode="singleTop"
+        <activity android:configChanges="orientation|screenSize" android:launchMode="singleTop"
             android:name="com.twitter.periscope.account.PeriscopeBanningActivity"
             android:screenOrientation="portrait" />
-        <activity android:configChanges="0x4a0"
+        <activity android:configChanges="keyboardHidden|orientation|screenSize"
             android:name="com.twitter.android.av.audio.AudioCardViewerActivity"
             android:theme="@style/AvCardCanvas" />
-        <activity android:configChanges="0x4a0" android:launchMode="singleTop"
+        <activity android:configChanges="keyboardHidden|orientation|screenSize"
+            android:launchMode="singleTop"
             android:name="com.twitter.android.av.revenue.VideoConversationCardCanvasActivity"
             android:screenOrientation="sensor" android:theme="@style/VideoCardCanvas" />
-        <activity android:configChanges="0x4a0"
+        <activity android:configChanges="keyboardHidden|orientation|screenSize"
             android:name="com.twitter.android.av.revenue.VideoDirectMessageCardCanvasActivity"
             android:screenOrientation="sensor" android:theme="@style/VideoCardCanvas" />
-        <activity android:configChanges="0x6a0" android:name="com.twitter.android.GalleryActivity"
+        <activity android:configChanges="keyboardHidden|orientation|uiMode|screenSize"
+            android:name="com.twitter.android.GalleryActivity"
             android:theme="@style/Theme.Gallery.Transluscent" />
-        <activity android:configChanges="0x6a0"
+        <activity android:configChanges="keyboardHidden|orientation|uiMode|screenSize"
             android:name="com.twitter.android.fullscreenmediaplayer.FullscreenMediaPlayerActivity"
             android:theme="@style/Theme.Gallery" />
         <activity android:label="@string/media_monetization_category_selector_activity_title"
@@ -581,7 +590,7 @@
         <activity android:label="@string/media_monetization_settings_activity_title"
             android:name="com.twitter.android.av.monetization.MediaMonetizationSettingsActivity"
             android:theme="@style/Theme.MediaMonetizationSettings" />
-        <activity android:configChanges="0x480"
+        <activity android:configChanges="orientation|screenSize"
             android:name="com.twitter.android.commerce.view.AuthenticatedWebViewActivity" />
         <activity android:name="com.twitter.android.media.imageeditor.EditImageActivity"
             android:screenOrientation="portrait" android:theme="@style/Theme.Dark" />
@@ -597,7 +606,7 @@
         <activity android:name="com.twitter.app.dm.DMAddParticipantsActivity" />
         <activity android:name="com.twitter.android.geo.places.PlaceLandingActivity"
             android:theme="@style/Theme.DarkToolBar" />
-        <activity android:configChanges="0x480"
+        <activity android:configChanges="orientation|screenSize"
             android:name="com.twitter.android.moments.ui.fullscreen.MomentsFullScreenPagerActivity"
             android:theme="@style/Theme.Dark.Transparent.MomentsFullScreenPagerBase.MomentsFullScreenPager" />
         <activity android:name="com.twitter.android.moments.urt.URTMomentActivity"
@@ -691,7 +700,7 @@
         <activity android:excludeFromRecents="true"
             android:name="com.twitter.android.settings.notifications.SmsNotificationsSettingsActivity"
             android:theme="@style/Theme.Settings.Notification" />
-        <activity android:configChanges="0x4a0"
+        <activity android:configChanges="keyboardHidden|orientation|screenSize"
             android:name="com.twitter.app.onboarding.OcfFlowWebActivity" />
         <activity
             android:name="com.twitter.app.onboarding.permissionstep.LiveSyncPermissionStepActivity" />
@@ -714,7 +723,7 @@
         <activity android:name="com.twitter.app.onboarding.username.UsernameSettingActivity" />
         <activity
             android:name="com.twitter.app.onboarding.username.EditProfileUsernameSettingActivity"
-            android:windowSoftInputMode="0x2" />
+            android:windowSoftInputMode="stateHidden" />
         <activity android:name="com.twitter.app.onboarding.common.OcfInvisibleSubtaskActivity"
             android:noHistory="true" android:theme="@style/Theme.Transparent.TransparentStatusBar" />
         <activity
@@ -733,7 +742,8 @@
             android:permission="com.twitter.android.permission.RESTRICTED" />
         <service android:exported="false"
             android:name="com.twitter.android.platform.TwitterAuthenticationService"
-            android:permission="android.permission.ACCOUNT_MANAGER" android:protectionLevel="0x2">
+            android:permission="android.permission.ACCOUNT_MANAGER"
+            android:protectionLevel="signature">
             <intent-filter>
                 <action android:name="android.accounts.AccountAuthenticator" />
             </intent-filter>
@@ -742,7 +752,8 @@
         </service>
         <service android:exported="false"
             android:name="com.twitter.library.platform.TwitterDataSyncService"
-            android:permission="android.permission.BIND_JOB_SERVICE" android:protectionLevel="0x2">
+            android:permission="android.permission.BIND_JOB_SERVICE"
+            android:protectionLevel="signature">
             <intent-filter>
                 <action android:name="android.content.SyncAdapter" />
             </intent-filter>
@@ -774,9 +785,9 @@
                 <action android:name="android.intent.action.MY_PACKAGE_REPLACED" />
             </intent-filter>
         </receiver>
-        <activity android:configChanges="0x480"
+        <activity android:configChanges="orientation|screenSize"
             android:name="com.twitter.android.VideoEditorActivity" android:theme="@style/Theme.Dark" />
-        <activity android:configChanges="0x480"
+        <activity android:configChanges="orientation|screenSize"
             android:name="com.twitter.android.media.camera.CameraActivity"
             android:theme="@style/Theme.CameraActivity" />
         <activity android:name="com.twitter.android.qrcodes.QRCodeActivity"
@@ -832,23 +843,24 @@
             </intent-filter>
         </receiver>
         <uses-library android:name="org.apache.http.legacy" android:required="false" />
-        <activity android:configChanges="0x480"
+        <activity android:configChanges="orientation|screenSize"
             android:name="com.twitter.camera.consumption.controller.root.CameraFullScreenContainerActivity"
             android:theme="@style/Theme.Transparent.NewscameraContainerFullScreenBase.CameraContainer" />
-        <activity android:configChanges="0x6a0" android:launchMode="singleTop"
+        <activity android:configChanges="keyboardHidden|orientation|uiMode|screenSize"
+            android:launchMode="singleTop"
             android:name="com.twitter.camera.controller.root.CameraActivity"
             android:theme="@style/Camera" />
         <activity android:name="com.twitter.tweetdetail.TweetDetailActivity2"
             android:parentActivityName="com.twitter.app.main.MainActivity"
-            android:theme="@style/Theme" android:windowSoftInputMode="0x10" />
+            android:theme="@style/Theme" android:windowSoftInputMode="adjustResize" />
         <activity android:name="com.twitter.onboarding.ocf.common.OcfModalPlaceholderActivity" />
         <activity android:name="tv.periscope.android.library.PeriscopeInterstitialActivity"
             android:screenOrientation="portrait"
             android:theme="@style/ps__InterstitialActivityTheme" />
-        <activity android:configChanges="0x480"
+        <activity android:configChanges="orientation|screenSize"
             android:name="tv.periscope.android.ui.broadcast.KickSelfActivity"
             android:screenOrientation="portrait" android:theme="@style/Theme.AppCompat.NoActionBar" />
-        <activity android:configChanges="0x480"
+        <activity android:configChanges="orientation|screenSize"
             android:name="tv.periscope.android.ui.profile.ActionRequiredActivity"
             android:screenOrientation="portrait" />
         <service android:name="com.twitter.contacts.upload.ContactsUploadService" />
@@ -901,7 +913,7 @@
             android:process=":MediaService" />
         <activity android:excludeFromRecents="true" android:exported="false"
             android:name="com.google.android.gms.auth.api.signin.internal.SignInHubActivity"
-            android:theme="@android:style/Theme.Translucent.NoTitleBar" />
+            android:theme="@0x1030010" />
         <service android:exported="true"
             android:name="com.google.android.gms.auth.api.signin.RevocationBoundService"
             android:permission="com.google.android.gms.auth.api.signin.permission.REVOCATION_NOTIFICATION" />
@@ -932,7 +944,7 @@
         </service>
         <activity android:exported="false"
             android:name="com.google.android.gms.common.api.GoogleApiActivity"
-            android:theme="@android:style/Theme.Translucent.NoTitleBar" />
+            android:theme="@0x1030010" />
         <provider android:authorities="com.twitter.android.firebaseinitprovider"
             android:exported="false" android:initOrder="100"
             android:name="com.google.firebase.provider.FirebaseInitProvider" />
