@@ -103,33 +103,47 @@ final class AttributeValueMapper {
         List<String> list = new ArrayList<String>();
         if ((value & 0x00001000) != 0) {
             list.add("density");
-        } else if ((value & 0x40000000) != 0) {
+        }
+        if ((value & 0x40000000) != 0) {
             list.add("fontScale");
-        } else if ((value & 0x00000010) != 0) {
+        }
+        if ((value & 0x00000010) != 0) {
             list.add("keyboard");
-        } else if ((value & 0x00000020) != 0) {
+        }
+        if ((value & 0x00000020) != 0) {
             list.add("keyboardHidden");
-        } else if ((value & 0x00002000) != 0) {
+        }
+        if ((value & 0x00002000) != 0) {
             list.add("direction");
-        } else if ((value & 0x00000004) != 0) {
+        }
+        if ((value & 0x00000004) != 0) {
             list.add("locale");
-        } else if ((value & 0x00000001) != 0) {
+        }
+        if ((value & 0x00000001) != 0) {
             list.add("mcc");
-        } else if ((value & 0x00000002) != 0) {
+        }
+        if ((value & 0x00000002) != 0) {
             list.add("mnc");
-        } else if ((value & 0x00000040) != 0) {
+        }
+        if ((value & 0x00000040) != 0) {
             list.add("navigation");
-        } else if ((value & 0x00000080) != 0) {
+        }
+        if ((value & 0x00000080) != 0) {
             list.add("orientation");
-        } else if ((value & 0x00000100) != 0) {
+        }
+        if ((value & 0x00000100) != 0) {
             list.add("screenLayout");
-        } else if ((value & 0x00000400) != 0) {
+        }
+        if ((value & 0x00000400) != 0) {
             list.add("screenSize");
-        } else if ((value & 0x00000800) != 0) {
+        }
+        if ((value & 0x00000800) != 0) {
             list.add("smallestScreenSize");
-        } else if ((value & 0x00000008) != 0) {
+        }
+        if ((value & 0x00000008) != 0) {
             list.add("touchscreen");
-        } else if ((value & 0x00000200) != 0) {
+        }
+        if ((value & 0x00000200) != 0) {
             list.add("uiMode");
         }
         return join(list, "|");
