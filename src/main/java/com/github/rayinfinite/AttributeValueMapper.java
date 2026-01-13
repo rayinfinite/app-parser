@@ -104,96 +104,81 @@ final class AttributeValueMapper {
     }
 
     private static String getConfigChanges(int value) {
-        List<String> list = new ArrayList<String>();
-        if ((value & 0x00001000) != 0) {
-            list.add("density");
+        // 按 CONFIG_* 位索引升序排列的名字列表（索引 i 对应 bit i，即 mask = 1 << i）
+        final String[] NAMES = {
+                "mcc", "mnc", "locale", "touchscreen",
+                "keyboard", "keyboardHidden", "navigation", "orientation",
+                "screenLayout", "uiMode", "screenSize", "smallestScreenSize",
+                "density", "direction"
+        };
+
+        List<String> parts = new ArrayList<>();
+
+        // 遍历所有已定义的低比特位（0 ～ 13）
+        for (int i = 0; i < NAMES.length; i++) {
+            if ((value & (1 << i)) != 0) {
+                parts.add(NAMES[i]);
+            }
         }
+
+        // 单独处理 fontScale：它位于 bit 30
         if ((value & 0x40000000) != 0) {
-            list.add("fontScale");
+            parts.add("fontScale");
         }
-        if ((value & 0x00000010) != 0) {
-            list.add("keyboard");
-        }
-        if ((value & 0x00000020) != 0) {
-            list.add("keyboardHidden");
-        }
-        if ((value & 0x00002000) != 0) {
-            list.add("direction");
-        }
-        if ((value & 0x00000004) != 0) {
-            list.add("locale");
-        }
-        if ((value & 0x00000001) != 0) {
-            list.add("mcc");
-        }
-        if ((value & 0x00000002) != 0) {
-            list.add("mnc");
-        }
-        if ((value & 0x00000040) != 0) {
-            list.add("navigation");
-        }
-        if ((value & 0x00000080) != 0) {
-            list.add("orientation");
-        }
-        if ((value & 0x00000100) != 0) {
-            list.add("screenLayout");
-        }
-        if ((value & 0x00000400) != 0) {
-            list.add("screenSize");
-        }
-        if ((value & 0x00000800) != 0) {
-            list.add("smallestScreenSize");
-        }
-        if ((value & 0x00000008) != 0) {
-            list.add("touchscreen");
-        }
-        if ((value & 0x00000200) != 0) {
-            list.add("uiMode");
-        }
-        return join(list, "|");
+
+        return join(parts);
     }
 
     private static String getWindowSoftInputMode(int value) {
-        int adjust = value & 0x000000f0;
-        int state = value & 0x0000000f;
-        List<String> list = new ArrayList<String>(2);
-        switch (adjust) {
-            case 0x00000030:
-                list.add("adjustNothing");
-                break;
-            case 0x00000020:
-                list.add("adjustPan");
-                break;
-            case 0x00000010:
-                list.add("adjustResize");
-                break;
-            case 0x00000000:
-                break;
-            default:
-                list.add("WindowInputModeAdjust:" + Integer.toHexString(adjust));
-        }
+        final int adjust = (value >> 4) & 0x0F; // bits 4–7 → adjust flags
+        final int state = value & 0x0F;         // bits 0–3 → state flags
+
+        List<String> list = new ArrayList<>(2);
+
+        // State flags
         switch (state) {
-            case 0x00000003:
-                list.add("stateAlwaysHidden");
+            case 0x0:
                 break;
-            case 0x00000005:
-                list.add("stateAlwaysVisible");
-                break;
-            case 0x00000002:
-                list.add("stateHidden");
-                break;
-            case 0x00000001:
+            case 0x1:
                 list.add("stateUnchanged");
                 break;
-            case 0x00000004:
+            case 0x2:
+                list.add("stateHidden");
+                break;
+            case 0x3:
+                list.add("stateAlwaysHidden");
+                break;
+            case 0x4:
                 list.add("stateVisible");
                 break;
-            case 0x00000000:
+            case 0x5:
+                list.add("stateAlwaysVisible");
+                break;
+            case 0x6:
+                list.add("stateUnspecified");
                 break;
             default:
                 list.add("WindowInputModeState:" + Integer.toHexString(state));
         }
-        return join(list, "|");
+
+        // Adjust flags
+        switch (adjust) {
+            case 0x0:
+                break;
+            case 0x1:
+                list.add("adjustResize");
+                break;
+            case 0x2:
+                list.add("adjustPan");
+                break;
+            case 0x3:
+                list.add("adjustNothing");
+                break;
+            default:
+                list.add("WindowInputModeAdjust:" + Integer.toHexString(adjust));
+        }
+
+        return join(list);
     }
 
     private static String getProtectionLevel(int value) {
@@ -222,7 +207,7 @@ final class AttributeValueMapper {
             default:
                 levels.add("ProtectionLevel:" + Integer.toHexString(value));
         }
-        return join(levels, "|");
+        return join(levels);
     }
 
     private static String getInstallLocation(int value) {
@@ -251,17 +236,10 @@ final class AttributeValueMapper {
         return true;
     }
 
-    private static String join(List<String> items, String separator) {
-        if (items == null || items.isEmpty()) {
+    private static String join(List<String> list) {
+        if (list == null || list.isEmpty()) {
             return "";
         }
-        StringBuilder sb = new StringBuilder();
-        for (int i = 0; i < items.size(); i++) {
-            if (i > 0 && separator != null) {
-                sb.append(separator);
-            }
-            sb.append(items.get(i));
-        }
-        return sb.toString();
+        return String.join("|", list);
     }
 }
