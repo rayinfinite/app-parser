@@ -5,23 +5,14 @@ import lombok.Getter;
 import lombok.NoArgsConstructor;
 import lombok.RequiredArgsConstructor;
 
-import java.io.ByteArrayOutputStream;
-import java.io.File;
-import java.io.IOException;
-import java.io.InputStream;
 import java.nio.ByteBuffer;
 import java.nio.ByteOrder;
 import java.nio.charset.StandardCharsets;
 import java.util.ArrayList;
-import java.util.HashMap;
 import java.util.List;
-import java.util.Map;
-import java.util.zip.ZipEntry;
-import java.util.zip.ZipFile;
 
 @NoArgsConstructor(access = AccessLevel.PRIVATE)
 public final class ManifestXmlDecoder {
-    public static final String MANIFEST_PATH = "AndroidManifest.xml";
     private static volatile boolean attributeValueMappingEnabled = true;
 
     public static boolean isAttributeValueMappingEnabled() {
@@ -30,66 +21,6 @@ public final class ManifestXmlDecoder {
 
     public static void setAttributeValueMappingEnabled(boolean enabled) {
         attributeValueMappingEnabled = enabled;
-    }
-
-    public static String decodeFromApk(File apkFile) throws IOException {
-        return decodeFromApk(apkFile, null);
-    }
-
-    public static String decodeFromApkWithResources(File apkFile) throws IOException {
-        return decodeFromApkWithResources(apkFile, true);
-    }
-
-    public static String decodeFromApkWithResources(File apkFile, boolean resolveToValue) throws IOException {
-        Map<String, byte[]> files = readFiles(apkFile, MANIFEST_PATH, ResourceTableParser.RESOURCE_FILE);
-        byte[] manifestBytes = files.get(MANIFEST_PATH);
-        if (manifestBytes == null) {
-            throw new ManifestXmlException("Manifest file not found: " + MANIFEST_PATH);
-        }
-        byte[] resourcesBytes = files.get(ResourceTableParser.RESOURCE_FILE);
-        return decodeFromManifest(manifestBytes, ResourceTableParser.fromResources(resourcesBytes, resolveToValue));
-    }
-
-    public static String decodeFromApk(File apkFile, ResourceResolver resolver) throws IOException {
-        if (apkFile == null) {
-            throw new IllegalArgumentException("apkFile is null");
-        }
-        Map<String, byte[]> files = readFiles(apkFile, MANIFEST_PATH);
-        byte[] manifestBytes = files.get(MANIFEST_PATH);
-        if (manifestBytes == null) {
-            throw new ManifestXmlException("Manifest file not found: " + MANIFEST_PATH);
-        }
-        return decodeFromManifest(manifestBytes, resolver);
-    }
-
-    public static Map<String, byte[]> readFiles(File apkFile, String... paths) throws IOException {
-        if (apkFile == null) {
-            throw new IllegalArgumentException("apkFile is null");
-        }
-        Map<String, byte[]> result = new HashMap<>();
-        if (paths == null || paths.length == 0) {
-            return result;
-        }
-        try (ZipFile zipFile = new ZipFile(apkFile)) {
-            for (String path : paths) {
-                if (path == null) {
-                    continue;
-                }
-                ZipEntry entry = zipFile.getEntry(path);
-                if (entry == null) {
-                    result.put(path, null);
-                    continue;
-                }
-                try (InputStream inputStream = zipFile.getInputStream(entry)) {
-                    result.put(path, readAllBytes(inputStream));
-                }
-            }
-        }
-        return result;
-    }
-
-    public static String decodeFromManifest(byte[] manifestBytes) {
-        return decodeFromManifest(manifestBytes, null);
     }
 
     public static String decodeFromManifest(byte[] manifestBytes, ResourceResolver resolver) {
@@ -110,7 +41,7 @@ public final class ManifestXmlDecoder {
         }
     }
 
-    private static final class BinaryXmlParser {
+    static final class BinaryXmlParser {
         private final ByteBuffer buffer;
         private final ResourceResolver resolver;
         private StringPool stringPool;
@@ -806,18 +737,8 @@ public final class ManifestXmlDecoder {
         return sb.toString();
     }
 
-    private static byte[] readAllBytes(InputStream inputStream) throws IOException {
-        ByteArrayOutputStream outputStream = new ByteArrayOutputStream();
-        byte[] buffer = new byte[8192];
-        int read;
-        while ((read = inputStream.read(buffer)) != -1) {
-            outputStream.write(buffer, 0, read);
-        }
-        return outputStream.toByteArray();
-    }
-
-    private static final class ManifestXmlException extends RuntimeException {
-        private ManifestXmlException(String message) {
+    static final class ManifestXmlException extends RuntimeException {
+        ManifestXmlException(String message) {
             super(message);
         }
     }

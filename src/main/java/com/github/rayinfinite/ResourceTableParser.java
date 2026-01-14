@@ -18,7 +18,6 @@ import java.util.Set;
 
 @NoArgsConstructor(access = AccessLevel.PRIVATE)
 public final class ResourceTableParser {
-    public static final String RESOURCE_FILE = "resources.arsc";
 
     public static ManifestXmlDecoder.ResourceResolver fromResources(byte[] resourcesBytes) {
         return fromResources(resourcesBytes, true);
