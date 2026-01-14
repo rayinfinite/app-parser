@@ -35,5 +35,12 @@
             <version>2.6.10</version>
             <scope>test</scope>
         </dependency>
+        <!-- Source: https://mvnrepository.com/artifact/org.dom4j/dom4j -->
+        <dependency>
+            <groupId>org.dom4j</groupId>
+            <artifactId>dom4j</artifactId>
+            <version>2.1.5</version>
+            <scope>test</scope>
+        </dependency>
     </dependencies>
 </project>

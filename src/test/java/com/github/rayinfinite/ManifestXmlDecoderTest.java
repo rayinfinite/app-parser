@@ -54,7 +54,7 @@ public class ManifestXmlDecoderTest {
 
         String actual = ManifestXmlDecoder.decodeFromApkWithResources(apkFile, false);
         String actualTwitter = resourceFileString("real.xml");
-        Assertions.assertEquals(actualTwitter, actual, "Manifest mismatch: " + apkName);
+        Assertions.assertEquals(XmlFormatter.format(actualTwitter), XmlFormatter.format(actual), "Manifest mismatch: " + apkName);
     }
 
     private File resourceFile(String name) throws Exception {

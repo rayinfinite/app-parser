@@ -8,13 +8,27 @@ import java.util.function.Function;
 
 final class AttributeValueMapper {
     private static final Map<String, Function<Integer, String>> MAPPERS = new ConcurrentHashMap<>();
+    private static final String[] SCREEN_ORIENTATION = {"landscape", "portrait", "user", "behind", "sensor",
+            "nosensor", "sensorLandscape", "sensorPortrait", "reverseLandscape", "reversePortrait", "fullSensor",
+            "userLandscape", "userPortrait", "fullUser", "locked"};
+    private static final String[] LAUNCH_MODE = {"standard", "singleTop", "singleTask", "singleInstance"};
+    private static final String[] DOCUMENT_LAUNCH_MODE = {"none", "intoExisting", "always", "never"};
+    private static final String[] INSTALL_LOCATION = {"auto", "internalOnly", "preferExternal"};
+    private static final String[] WINDOW_INPUT_STATE = {"", "stateUnchanged", "stateHidden",
+            "stateAlwaysHidden", "stateVisible", "stateAlwaysVisible", "stateUnspecified"};
+    private static final String[] WINDOW_INPUT_ADJUST = {"", "adjustResize", "adjustPan", "adjustNothing"};
+    // 按 CONFIG_* 位索引升序排列的名字列表（索引 i 对应 bit i，即 mask = 1 << i）
+    private static final String[] CONFIG_CHANGES = {"mcc", "mnc", "locale", "touchscreen", "keyboard",
+            "keyboardHidden", "navigation", "orientation", "screenLayout", "uiMode", "screenSize",
+            "smallestScreenSize", "density", "direction"};
 
     static {
         register("screenOrientation", AttributeValueMapper::getScreenOrientation);
         register("configChanges", AttributeValueMapper::getConfigChanges);
         register("windowSoftInputMode", AttributeValueMapper::getWindowSoftInputMode);
-        register("launchMode", AttributeValueMapper::getLaunchMode);
-        register("installLocation", AttributeValueMapper::getInstallLocation);
+        register("launchMode", value -> mapByIndex(LAUNCH_MODE, value, "LaunchMode:"));
+        register("documentLaunchMode", value -> mapByIndex(DOCUMENT_LAUNCH_MODE, value, "DocumentLaunchMode:"));
+        register("installLocation", value -> mapByIndex(INSTALL_LOCATION, value, "installLocation:"));
         register("protectionLevel", AttributeValueMapper::getProtectionLevel);
     }
 
@@ -51,46 +65,12 @@ final class AttributeValueMapper {
         MAPPERS.put(attributeName, mapper);
     }
 
-    private static final String[] SCREEN_ORIENTATION = new String[]{
-            "landscape",
-            "portrait",
-            "user",
-            "behind",
-            "sensor",
-            "nosensor",
-            "sensorLandscape",
-            "sensorPortrait",
-            "reverseLandscape",
-            "reversePortrait",
-            "fullSensor",
-            "userLandscape",
-            "userPortrait",
-            "fullUser",
-            "locked"
-    };
-
     private static String getScreenOrientation(int value) {
         if (value == 0xffffffff) {
             return "unspecified";
         }
-        if (value >= 0 && value < SCREEN_ORIENTATION.length) {
-            return SCREEN_ORIENTATION[value];
-        }
-        return "ScreenOrientation:" + Integer.toHexString(value);
+        return mapByIndex(SCREEN_ORIENTATION, value, "ScreenOrientation:");
     }
-
-    private static final String[] LAUNCH_MODE = new String[]{
-            "standard",
-            "singleTop",
-            "singleTask",
-            "singleInstance"
-    };
-
-    private static final String[] INSTALL_LOCATION = new String[]{
-            "auto",
-            "internalOnly",
-            "preferExternal"
-    };
 
     private static String mapByIndex(String[] values, int value, String fallbackPrefix) {
         if (value >= 0 && value < values.length) {
@@ -99,25 +79,13 @@ final class AttributeValueMapper {
         return fallbackPrefix + Integer.toHexString(value);
     }
 
-    private static String getLaunchMode(int value) {
-        return mapByIndex(LAUNCH_MODE, value, "LaunchMode:");
-    }
-
     private static String getConfigChanges(int value) {
-        // 按 CONFIG_* 位索引升序排列的名字列表（索引 i 对应 bit i，即 mask = 1 << i）
-        final String[] NAMES = {
-                "mcc", "mnc", "locale", "touchscreen",
-                "keyboard", "keyboardHidden", "navigation", "orientation",
-                "screenLayout", "uiMode", "screenSize", "smallestScreenSize",
-                "density", "direction"
-        };
-
         List<String> parts = new ArrayList<>();
 
         // 遍历所有已定义的低比特位（0 ～ 13）
-        for (int i = 0; i < NAMES.length; i++) {
+        for (int i = 0; i < CONFIG_CHANGES.length; i++) {
             if ((value & (1 << i)) != 0) {
-                parts.add(NAMES[i]);
+                parts.add(CONFIG_CHANGES[i]);
             }
         }
 
@@ -136,47 +104,10 @@ final class AttributeValueMapper {
         List<String> list = new ArrayList<>(2);
 
         // State flags
-        switch (state) {
-            case 0x0:
-                break;
-            case 0x1:
-                list.add("stateUnchanged");
-                break;
-            case 0x2:
-                list.add("stateHidden");
-                break;
-            case 0x3:
-                list.add("stateAlwaysHidden");
-                break;
-            case 0x4:
-                list.add("stateVisible");
-                break;
-            case 0x5:
-                list.add("stateAlwaysVisible");
-                break;
-            case 0x6:
-                list.add("stateUnspecified");
-                break;
-            default:
-                list.add("WindowInputModeState:" + Integer.toHexString(state));
-        }
+        addFlagByIndex(list, WINDOW_INPUT_STATE, state, "WindowInputModeState:");
 
         // Adjust flags
-        switch (adjust) {
-            case 0x0:
-                break;
-            case 0x1:
-                list.add("adjustResize");
-                break;
-            case 0x2:
-                list.add("adjustPan");
-                break;
-            case 0x3:
-                list.add("adjustNothing");
-                break;
-            default:
-                list.add("WindowInputModeAdjust:" + Integer.toHexString(adjust));
-        }
+        addFlagByIndex(list, WINDOW_INPUT_ADJUST, adjust, "WindowInputModeAdjust:");
 
         return join(list);
     }
@@ -210,10 +141,6 @@ final class AttributeValueMapper {
         return join(levels);
     }
 
-    private static String getInstallLocation(int value) {
-        return mapByIndex(INSTALL_LOCATION, value, "installLocation:");
-    }
-
     private static boolean isNumeric(String value) {
         return value.chars().allMatch(Character::isDigit);
     }
@@ -241,5 +168,16 @@ final class AttributeValueMapper {
             return "";
         }
         return String.join("|", list);
+    }
+
+    private static void addFlagByIndex(List<String> list, String[] values, int value, String fallbackPrefix) {
+        if (value == 0) {
+            return;
+        }
+        if (value > 0 && value < values.length && !values[value].isEmpty()) {
+            list.add(values[value]);
+            return;
+        }
+        list.add(fallbackPrefix + Integer.toHexString(value));
     }
 }

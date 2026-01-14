@@ -209,7 +209,7 @@
         <activity android:label="@0x7f120037" android:name="com.twitter.android.settings.AccountDeactivatedActivity" android:excludeFromRecents="true" android:windowSoftInputMode="adjustResize" />
         <activity android:name="com.twitter.android.ReportFlowWebViewActivity" android:excludeFromRecents="true" android:configChanges="keyboardHidden|orientation|screenSize" />
         <activity android:name="com.twitter.android.BouncerWebViewActivity" android:excludeFromRecents="true" android:launchMode="singleTask" android:configChanges="keyboardHidden|orientation|screenSize" />
-        <activity android:name="com.twitter.app.deeplink.UrlInterpreterActivity" android:launchMode="singleTask" android:noHistory="true" android:documentLaunchMode="3">
+        <activity android:name="com.twitter.app.deeplink.UrlInterpreterActivity" android:launchMode="singleTask" android:noHistory="true" android:documentLaunchMode="never">
             <intent-filter android:autoVerify="true">
                 <action android:name="android.intent.action.VIEW" />
                 <category android:name="android.intent.category.DEFAULT" />
