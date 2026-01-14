@@ -1,27 +1,18 @@
 package com.github.rayinfinite;
 
-import lombok.AccessLevel;
-import lombok.Getter;
-import lombok.NoArgsConstructor;
-import lombok.RequiredArgsConstructor;
+import lombok.*;
 
 import java.nio.ByteBuffer;
 import java.nio.ByteOrder;
 import java.nio.charset.StandardCharsets;
 import java.util.ArrayList;
 import java.util.List;
+import java.util.function.BiFunction;
 
 @NoArgsConstructor(access = AccessLevel.PRIVATE)
-public final class ManifestXmlDecoder {
-    private static volatile boolean attributeValueMappingEnabled = true;
-
-    public static boolean isAttributeValueMappingEnabled() {
-        return attributeValueMappingEnabled;
-    }
-
-    public static void setAttributeValueMappingEnabled(boolean enabled) {
-        attributeValueMappingEnabled = enabled;
-    }
+final class ManifestXmlDecoder {
+    @Setter
+    private static BiFunction<String, String, String> attributeValueMapper;
 
     public static String decodeFromManifest(byte[] manifestBytes, ResourceResolver resolver) {
         if (manifestBytes == null) {
@@ -175,8 +166,8 @@ public final class ManifestXmlDecoder {
             ResValue resValue = readResValue(buffer);
 
             String value = rawValue != null ? rawValue : resValue.toStringValue(stringPool, resolver);
-            if (attributeValueMappingEnabled) {
-                value = AttributeValueMapper.mapIfNeeded(name, value);
+            if (attributeValueMapper != null) {
+                value = attributeValueMapper.apply(name, value);
             }
             return new XmlAttribute(namespace, name, value);
         }

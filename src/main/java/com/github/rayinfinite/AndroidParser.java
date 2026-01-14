@@ -1,5 +1,8 @@
 package com.github.rayinfinite;
 
+import lombok.Getter;
+import lombok.Setter;
+
 import java.io.ByteArrayOutputStream;
 import java.io.File;
 import java.io.IOException;
@@ -9,9 +12,12 @@ import java.util.Map;
 import java.util.zip.ZipEntry;
 import java.util.zip.ZipFile;
 
-public class AndroidParser {
+public final class AndroidParser {
     public static final String MANIFEST_PATH = "AndroidManifest.xml";
     public static final String RESOURCE_FILE = "resources.arsc";
+    @Getter
+    @Setter
+    private static volatile boolean attributeValueMappingEnabled = true;
 
     public static String decode(File apkFile) {
         return decode(apkFile, 1);
@@ -91,6 +97,9 @@ public class AndroidParser {
     }
 
     public static String decodeFromManifest(byte[] manifestBytes, ManifestXmlDecoder.ResourceResolver resolver) {
+        if (attributeValueMappingEnabled) {
+            ManifestXmlDecoder.setAttributeValueMapper(AttributeValueMapper::mapIfNeeded);
+        }
         return ManifestXmlDecoder.decodeFromManifest(manifestBytes, resolver);
     }
 
