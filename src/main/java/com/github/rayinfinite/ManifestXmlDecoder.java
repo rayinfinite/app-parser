@@ -430,6 +430,8 @@ public final class ManifestXmlDecoder {
                     return data != 0 ? "true" : "false";
                 case ResType.STRING:
                     return data >= 0 && stringPool != null ? stringPool.get(data) : "";
+                case ResType.FLOAT:
+                    return Float.toString(Float.intBitsToFloat(data));
                 case ResType.REFERENCE:
                 case ResType.ATTRIBUTE:
                     long resId = data & 0xffffffffL;

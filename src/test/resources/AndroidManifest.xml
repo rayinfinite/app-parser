@@ -60,7 +60,7 @@
     <uses-permission android:name="com.google.android.finsky.permission.BIND_GET_INSTALL_REFERRER_SERVICE" />
     <application android:theme="@0x7f1303d7" android:label="@0x7f120088" android:icon="@0x7f0f0000" android:name="com.twitter.app.TwitterApplication" android:allowBackup="@0x7f050004" android:hardwareAccelerated="true" android:largeHeap="true" android:supportsRtl="true" android:requiredAccountType="com.twitter.android.auth.login" android:fullBackupContent="false" android:usesCleartextTraffic="true" android:resizeableActivity="true" android:roundIcon="@0x7f0f0002" android:appComponentFactory="androidx.core.app.CoreComponentFactory">
         <meta-data android:name="android.app.default_searchable" android:value="com.twitter.android.SearchActivity" />
-        <meta-data android:name="android.max_aspect" android:value="{4:1074161254}" />
+        <meta-data android:name="android.max_aspect" android:value="2.1" />
         <meta-data android:name="firebase_analytics_collection_deactivated" android:value="true" />
         <meta-data android:name="google_analytics_adid_collection_enabled" android:value="false" />
         <activity android:theme="@0x7f13040a" android:name="com.twitter.android.LoginActivity" />

@@ -14,6 +14,7 @@ final class AttributeValueMapper {
     private static final String[] LAUNCH_MODE = {"standard", "singleTop", "singleTask", "singleInstance"};
     private static final String[] DOCUMENT_LAUNCH_MODE = {"none", "intoExisting", "always", "never"};
     private static final String[] INSTALL_LOCATION = {"auto", "internalOnly", "preferExternal"};
+    private static final String[] PROTECTION_LEVEL = {"normal", "dangerous", "signature", "signatureOrSystem"};
     private static final String[] WINDOW_INPUT_STATE = {"", "stateUnchanged", "stateHidden",
             "stateAlwaysHidden", "stateVisible", "stateAlwaysVisible", "stateUnspecified"};
     private static final String[] WINDOW_INPUT_ADJUST = {"", "adjustResize", "adjustPan", "adjustNothing"};
@@ -122,22 +123,7 @@ final class AttributeValueMapper {
             value = value ^ 0x20;
             levels.add("development");
         }
-        switch (value) {
-            case 0:
-                levels.add("normal");
-                break;
-            case 1:
-                levels.add("dangerous");
-                break;
-            case 2:
-                levels.add("signature");
-                break;
-            case 3:
-                levels.add("signatureOrSystem");
-                break;
-            default:
-                levels.add("ProtectionLevel:" + Integer.toHexString(value));
-        }
+        levels.add(mapByIndex(PROTECTION_LEVEL, value, "ProtectionLevel:"));
         return join(levels);
     }
 
