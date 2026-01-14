@@ -26,7 +26,7 @@ public class AndroidParserTest {
             try (ApkFile parser = new ApkFile(apkFile)) {
                 expected = parser.getManifestXml();
             }
-            String actual = AndroidParser.decodeFromApk(apkFile);
+            String actual = AndroidParser.decode(apkFile, 0);
             Assertions.assertEquals(expected, actual, "Manifest mismatch: " + apkName);
         }
     }
@@ -42,7 +42,7 @@ public class AndroidParserTest {
         String expectedTwitter = resourceFileString("OldTwitterAndroidManifest.xml");
         Assertions.assertEquals(expectedTwitter, expected, "Manifest mismatch: " + apkName);
 
-        String actual = AndroidParser.decodeFromApk(apkFile);
+        String actual = AndroidParser.decode(apkFile, 0);
         String actualTwitter = resourceFileString("AndroidManifest.xml");
         Assertions.assertEquals(actualTwitter, actual, "Manifest mismatch: " + apkName);
     }
@@ -52,7 +52,7 @@ public class AndroidParserTest {
         String apkName = "Twitter_v7.93.2.apk";
         File apkFile = resourceFile(apkName);
 
-        String actual = AndroidParser.decodeFromApkWithResources(apkFile, false);
+        String actual = AndroidParser.decode(apkFile);
         String actualTwitter = resourceFileString("real.xml");
         Assertions.assertEquals(XmlFormatter.format(actualTwitter), XmlFormatter.format(actual), "Manifest mismatch: " + apkName);
     }
