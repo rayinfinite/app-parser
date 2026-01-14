@@ -13,7 +13,7 @@ public class AndroidParser {
     public static final String MANIFEST_PATH = "AndroidManifest.xml";
     public static final String RESOURCE_FILE = "resources.arsc";
 
-    public static String decode(File apkFile) throws IOException {
+    public static String decode(File apkFile) {
         return decode(apkFile, 1);
     }
 
@@ -23,11 +23,11 @@ public class AndroidParser {
      * 1: resolve to param
      * 2: resolve to Locale.getDefault()
      */
-    public static String decode(File apkFile, int type) throws IOException {
+    public static String decode(File apkFile, int type) {
         if (apkFile == null) {
             throw new IllegalArgumentException("apkFile is null");
         }
-        switch (type){
+        switch (type) {
             case 0:
                 return decode(apkFile, null);
             case 1:
@@ -39,7 +39,7 @@ public class AndroidParser {
         }
     }
 
-    public static String decodeWithResources(File apkFile, boolean resolveToValue) throws IOException {
+    public static String decodeWithResources(File apkFile, boolean resolveToValue) {
         Map<String, byte[]> files = readFiles(apkFile, MANIFEST_PATH, RESOURCE_FILE);
         byte[] manifestBytes = files.get(MANIFEST_PATH);
         if (manifestBytes == null) {
@@ -49,7 +49,7 @@ public class AndroidParser {
         return decodeFromManifest(manifestBytes, ResourceTableParser.fromResources(resourcesBytes, resolveToValue));
     }
 
-    public static String decode(File apkFile, ManifestXmlDecoder.ResourceResolver resolver) throws IOException {
+    public static String decode(File apkFile, ManifestXmlDecoder.ResourceResolver resolver) {
         Map<String, byte[]> files = readFiles(apkFile, MANIFEST_PATH);
         byte[] manifestBytes = files.get(MANIFEST_PATH);
         if (manifestBytes == null) {
@@ -58,7 +58,7 @@ public class AndroidParser {
         return decodeFromManifest(manifestBytes, resolver);
     }
 
-    public static Map<String, byte[]> readFiles(File apkFile, String... paths) throws IOException {
+    public static Map<String, byte[]> readFiles(File apkFile, String... paths) {
         if (apkFile == null) {
             throw new IllegalArgumentException("apkFile is null");
         }
@@ -80,6 +80,8 @@ public class AndroidParser {
                     result.put(path, readAllBytes(inputStream));
                 }
             }
+        } catch (IOException e) {
+            throw new ManifestXmlDecoder.ManifestXmlException(e);
         }
         return result;
     }

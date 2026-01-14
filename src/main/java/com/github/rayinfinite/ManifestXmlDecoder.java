@@ -741,5 +741,9 @@ public final class ManifestXmlDecoder {
         ManifestXmlException(String message) {
             super(message);
         }
+
+        ManifestXmlException(Throwable ex) {
+            super(ex);
+        }
     }
 }
