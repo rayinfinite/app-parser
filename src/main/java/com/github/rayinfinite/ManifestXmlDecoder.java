@@ -167,12 +167,12 @@ final class ManifestXmlDecoder {
             }
 
             if (firstHeader.getChunkType() != ChunkType.XML && firstHeader.getChunkType() != ChunkType.NULL) {
-                throw new ManifestXmlException("Unexpected first chunk: " + firstHeader.getChunkType());
+                throw new IllegalArgumentException("Unexpected first chunk: " + firstHeader.getChunkType());
             }
 
             ChunkHeader stringPoolHeader = readChunkHeader();
             if (!(stringPoolHeader instanceof StringPoolHeader)) {
-                throw new ManifestXmlException("String pool chunk not found");
+                throw new IllegalArgumentException("String pool chunk not found");
             }
             this.stringPool = readStringPool((StringPoolHeader) stringPoolHeader);
 
@@ -207,7 +207,7 @@ final class ManifestXmlDecoder {
                     default:
                         if (chunkHeader.getChunkType() < ChunkType.XML_FIRST_CHUNK
                                 || chunkHeader.getChunkType() > ChunkType.XML_LAST_CHUNK) {
-                            throw new ManifestXmlException("Unexpected chunk: " + chunkHeader.getChunkType());
+                            throw new IllegalArgumentException("Unexpected chunk: " + chunkHeader.getChunkType());
                         }
                         break;
                 }
@@ -358,7 +358,7 @@ final class ManifestXmlDecoder {
                     position(begin + headerSize);
                     return new ChunkHeader(chunkType, headerSize, chunkSize);
                 default:
-                    throw new ManifestXmlException("Unexpected chunk type: " + chunkType);
+                    throw new IllegalArgumentException("Unexpected chunk type: " + chunkType);
             }
         }
 
@@ -733,15 +733,5 @@ final class ManifestXmlDecoder {
             }
         }
         return sb.toString();
-    }
-
-    static final class ManifestXmlException extends RuntimeException {
-        ManifestXmlException(String message) {
-            super(message);
-        }
-
-        ManifestXmlException(Throwable ex) {
-            super(ex);
-        }
     }
 }
