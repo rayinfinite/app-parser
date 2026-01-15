@@ -14,6 +14,10 @@ final class ManifestXmlDecoder {
     @Setter
     private static BiFunction<String, String, String> attributeValueMapper;
 
+    public static String decodeFromManifest(byte[] manifestBytes) {
+        return decodeFromManifest(manifestBytes, null);
+    }
+
     public static String decodeFromManifest(byte[] manifestBytes, ResourceResolver resolver) {
         if (manifestBytes == null) {
             throw new IllegalArgumentException("manifestBytes is null");
