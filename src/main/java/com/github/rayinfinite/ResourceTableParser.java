@@ -1,13 +1,7 @@
 package com.github.rayinfinite;
 
-import lombok.AccessLevel;
-import lombok.Getter;
-import lombok.NoArgsConstructor;
-import lombok.RequiredArgsConstructor;
+import lombok.*;
 
-import java.nio.ByteBuffer;
-import java.nio.ByteOrder;
-import java.nio.charset.StandardCharsets;
 import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.HashSet;
@@ -15,6 +9,12 @@ import java.util.List;
 import java.util.Locale;
 import java.util.Map;
 import java.util.Set;
+
+import com.github.rayinfinite.ManifestXmlDecoder.ChunkHeader;
+import com.github.rayinfinite.ManifestXmlDecoder.ChunkType;
+import com.github.rayinfinite.ManifestXmlDecoder.ResType;
+import com.github.rayinfinite.ManifestXmlDecoder.StringPool;
+import com.github.rayinfinite.ManifestXmlDecoder.StringPoolHeader;
 
 @NoArgsConstructor(access = AccessLevel.PRIVATE)
 public final class ResourceTableParser {
@@ -54,7 +54,7 @@ public final class ResourceTableParser {
             if (!resolveToValue) {
                 return "@" + entry.typeName + "/" + entry.key;
             }
-            String value = resolveString(entry, new HashSet<Long>());
+            String value = resolveString(entry, new HashSet<>());
             if (value != null) {
                 return value;
             }
@@ -91,12 +91,9 @@ public final class ResourceTableParser {
     private static final class EmptyResolver implements ManifestXmlDecoder.ResourceResolver {
     }
 
-    private static final class Parser {
-        private final ByteBuffer buffer;
-        private StringPool globalStringPool;
-
+    private static final class Parser extends ManifestXmlDecoder.Parser {
         private Parser(byte[] data) {
-            this.buffer = ByteBuffer.wrap(data).order(ByteOrder.LITTLE_ENDIAN);
+            super(data);
         }
 
         private ResourceTable parse() {
@@ -108,7 +105,7 @@ public final class ResourceTableParser {
             if (stringPoolHeader == null) {
                 return new ResourceTable(new StringPool(0));
             }
-            globalStringPool = readStringPool(stringPoolHeader);
+            StringPool globalStringPool = readStringPool(stringPoolHeader);
             ResourceTable table = new ResourceTable(globalStringPool);
 
             if (tableHeader.packageCount > 0) {
@@ -133,11 +130,11 @@ public final class ResourceTableParser {
             long beginPos = buffer.position();
 
             if (packageHeader.typeStrings > 0) {
-                position(buffer, beginPos + packageHeader.typeStrings - packageHeader.getHeaderSize());
+                position(beginPos + packageHeader.typeStrings - packageHeader.getHeaderSize());
                 typeStringPool = readStringPool((StringPoolHeader) readChunkHeader());
             }
             if (packageHeader.keyStrings > 0) {
-                position(buffer, beginPos + packageHeader.keyStrings - packageHeader.getHeaderSize());
+                position(beginPos + packageHeader.keyStrings - packageHeader.getHeaderSize());
                 keyStringPool = readStringPool((StringPoolHeader) readChunkHeader());
             }
 
@@ -147,19 +144,19 @@ public final class ResourceTableParser {
                     return null;
                 }
                 long chunkBegin = buffer.position();
-                switch (chunkHeader.chunkType) {
+                switch (chunkHeader.getChunkType()) {
                     case ChunkType.TABLE_TYPE_SPEC:
                         TypeSpecHeader typeSpecHeader = (TypeSpecHeader) chunkHeader;
                         for (int i = 0; i < typeSpecHeader.entryCount; i++) {
-                            readUInt(buffer);
+                            readUInt();
                         }
-                        position(buffer, chunkBegin + typeSpecHeader.getBodySize());
+                        position(chunkBegin + typeSpecHeader.getBodySize());
                         break;
                     case ChunkType.TABLE_TYPE:
                         TypeHeader typeHeader = (TypeHeader) chunkHeader;
                         long[] offsets = new long[typeHeader.entryCount];
                         for (int i = 0; i < typeHeader.entryCount; i++) {
-                            offsets[i] = readUInt(buffer);
+                            offsets[i] = readUInt();
                         }
                         String typeName = typeStringPool != null && typeHeader.id > 0
                                 ? typeStringPool.get(typeHeader.id - 1)
@@ -167,26 +164,22 @@ public final class ResourceTableParser {
                         long entriesStart = chunkBegin + typeHeader.entriesStart - typeHeader.getHeaderSize();
                         String locale = typeHeader.config.locale();
                         for (int entryIndex = 0; entryIndex < offsets.length; entryIndex++) {
-                            if (offsets[entryIndex] == TypeHeader.NO_ENTRY) {
+                            if (offsets[entryIndex] == 0xffffffffL) {
                                 continue;
                             }
-                            position(buffer, entriesStart + offsets[entryIndex]);
+                            position(entriesStart + offsets[entryIndex]);
                             ResourceEntry entry = readResourceEntry(packageHeader.id, typeHeader.id, entryIndex,
                                     typeName, keyStringPool, locale);
-                            if (entry != null) {
-                                table.addEntry(entry);
-                            }
+                            table.addEntry(entry);
                         }
-                        position(buffer, chunkBegin + typeHeader.getBodySize());
+                        position(chunkBegin + typeHeader.getBodySize());
                         break;
                     case ChunkType.TABLE_PACKAGE:
                         return (PackageHeader) chunkHeader;
                     case ChunkType.TABLE_LIBRARY:
                     case ChunkType.NULL:
-                        position(buffer, chunkBegin + chunkHeader.getBodySize());
-                        break;
                     default:
-                        position(buffer, chunkBegin + chunkHeader.getBodySize());
+                        position(chunkBegin + chunkHeader.getBodySize());
                         break;
                 }
             }
@@ -196,27 +189,35 @@ public final class ResourceTableParser {
         private ResourceEntry readResourceEntry(int packageId, int typeId, int entryIndex, String typeName,
                                                 StringPool keyStringPool, String locale) {
             long beginPos = buffer.position();
-            int size = readUShort(buffer);
-            int flags = readUShort(buffer);
-            long keyRef = readUInt(buffer);
+            int size = readUShort();
+            int flags = readUShort();
+            long keyRef = readUInt();
             String key = keyStringPool != null ? keyStringPool.get((int) keyRef) : "key" + keyRef;
 
             if ((flags & ResourceEntry.FLAG_COMPLEX) != 0) {
-                readUInt(buffer);
-                long count = readUInt(buffer);
-                position(buffer, beginPos + size);
+                readUInt();
+                long count = readUInt();
+                position(beginPos + size);
                 for (int i = 0; i < count; i++) {
-                    readUInt(buffer);
-                    readResValue(buffer);
+                    readUInt();
+                    readResValue();
                 }
                 int resId = (packageId << 24) | (typeId << 16) | entryIndex;
                 return new ResourceEntry(resId, typeName, key, null, locale);
             }
 
-            position(buffer, beginPos + size);
-            ResourceValue value = readResValue(buffer);
+            position(beginPos + size);
+            ResourceValue value = readResValue();
             int resId = (packageId << 24) | (typeId << 16) | entryIndex;
             return new ResourceEntry(resId, typeName, key, value, locale);
+        }
+
+        private ResourceValue readResValue() {
+            readUShort();
+            readUByte();
+            short dataType = readUByte();
+            int data = buffer.getInt();
+            return new ResourceValue(dataType, data);
         }
 
         private ChunkHeader readChunkHeader() {
@@ -224,57 +225,57 @@ public final class ResourceTableParser {
                 return null;
             }
             int begin = buffer.position();
-            int chunkType = readUShort(buffer);
-            int headerSize = readUShort(buffer);
-            long chunkSize = readUInt(buffer);
+            int chunkType = readUShort();
+            int headerSize = readUShort();
+            long chunkSize = readUInt();
 
             switch (chunkType) {
                 case ChunkType.TABLE:
                     ResourceTableHeader tableHeader = new ResourceTableHeader(headerSize, chunkSize);
-                    tableHeader.setPackageCount(readUInt(buffer));
-                    position(buffer, begin + headerSize);
+                    tableHeader.setPackageCount(readUInt());
+                    position(begin + headerSize);
                     return tableHeader;
                 case ChunkType.STRING_POOL:
                     StringPoolHeader stringPoolHeader = new StringPoolHeader(headerSize, chunkSize);
-                    stringPoolHeader.setStringCount(readUInt(buffer));
-                    stringPoolHeader.setStyleCount(readUInt(buffer));
-                    stringPoolHeader.setFlags(readUInt(buffer));
-                    stringPoolHeader.setStringsStart(readUInt(buffer));
-                    stringPoolHeader.setStylesStart(readUInt(buffer));
-                    position(buffer, begin + headerSize);
+                    stringPoolHeader.setStringCount(readUInt());
+                    stringPoolHeader.setStyleCount(readUInt());
+                    stringPoolHeader.setFlags(readUInt());
+                    stringPoolHeader.setStringsStart(readUInt());
+                    stringPoolHeader.setStylesStart(readUInt());
+                    position(begin + headerSize);
                     return stringPoolHeader;
                 case ChunkType.TABLE_PACKAGE:
                     PackageHeader packageHeader = new PackageHeader(headerSize, chunkSize);
-                    packageHeader.setId(readUInt(buffer));
-                    packageHeader.setName(readFixedUtf16String(buffer, 128));
-                    packageHeader.setTypeStrings(readUInt(buffer));
-                    packageHeader.setLastPublicType(readUInt(buffer));
-                    packageHeader.setKeyStrings(readUInt(buffer));
-                    packageHeader.setLastPublicKey(readUInt(buffer));
-                    position(buffer, begin + headerSize);
+                    packageHeader.setId((int) readUInt());
+                    packageHeader.setName(readUtf16String(128));
+                    packageHeader.setTypeStrings(readUInt());
+                    packageHeader.setLastPublicType(readUInt());
+                    packageHeader.setKeyStrings(readUInt());
+                    packageHeader.setLastPublicKey(readUInt());
+                    position(begin + headerSize);
                     return packageHeader;
                 case ChunkType.TABLE_TYPE_SPEC:
                     TypeSpecHeader typeSpecHeader = new TypeSpecHeader(headerSize, chunkSize);
-                    typeSpecHeader.setId(readUByte(buffer));
-                    typeSpecHeader.setRes0(readUByte(buffer));
-                    typeSpecHeader.setRes1(readUShort(buffer));
-                    typeSpecHeader.setEntryCount(readUInt(buffer));
-                    position(buffer, begin + headerSize);
+                    typeSpecHeader.setId(readUByte());
+                    typeSpecHeader.setRes0(readUByte());
+                    typeSpecHeader.setRes1(readUShort());
+                    typeSpecHeader.setEntryCount(readUInt());
+                    position(begin + headerSize);
                     return typeSpecHeader;
                 case ChunkType.TABLE_TYPE:
                     TypeHeader typeHeader = new TypeHeader(headerSize, chunkSize);
-                    typeHeader.setId(readUByte(buffer));
-                    typeHeader.setRes0(readUByte(buffer));
-                    typeHeader.setRes1(readUShort(buffer));
-                    typeHeader.setEntryCount(readUInt(buffer));
-                    typeHeader.setEntriesStart(readUInt(buffer));
+                    typeHeader.setId(readUByte());
+                    typeHeader.setRes0(readUByte());
+                    typeHeader.setRes1(readUShort());
+                    typeHeader.setEntryCount(readUInt());
+                    typeHeader.setEntriesStart(readUInt());
                     typeHeader.setConfig(readResTableConfig());
-                    position(buffer, begin + headerSize);
+                    position(begin + headerSize);
                     return typeHeader;
                 case ChunkType.TABLE_LIBRARY:
                 case ChunkType.UNKNOWN:
                 case ChunkType.NULL:
-                    position(buffer, begin + headerSize);
+                    position(begin + headerSize);
                     return new ChunkHeader(chunkType, headerSize, chunkSize);
                 default:
                     throw new IllegalStateException("Unexpected chunk type: 0x" + Integer.toHexString(chunkType));
@@ -283,119 +284,34 @@ public final class ResourceTableParser {
 
         private ResTableConfig readResTableConfig() {
             long beginPos = buffer.position();
-            long size = readUInt(buffer);
+            long size = readUInt();
             ResTableConfig config = new ResTableConfig();
             config.setSize(size);
             config.setMcc(buffer.getShort());
             config.setMnc(buffer.getShort());
-            config.setLanguage(readFixedAscii(buffer, 2));
-            config.setCountry(readFixedAscii(buffer, 2));
-            config.setOrientation(readUByte(buffer));
-            config.setTouchscreen(readUByte(buffer));
-            config.setDensity(readUShort(buffer));
+            config.setLanguage(readFixedAscii(2));
+            config.setCountry(readFixedAscii(2));
+            config.setOrientation(readUByte());
+            config.setTouchscreen(readUByte());
+            config.setDensity(readUShort());
             long endPos = buffer.position();
-            skip(buffer, (int) (size - (endPos - beginPos)));
+            skip((int) (size - (endPos - beginPos)));
             return config;
         }
-
-        private StringPool readStringPool(StringPoolHeader header) {
-            long beginPos = buffer.position();
-            int[] offsets = new int[header.stringCount];
-            for (int i = 0; i < header.stringCount; i++) {
-                offsets[i] = (int) readUInt(buffer);
-            }
-            boolean utf8 = (header.flags & StringPoolHeader.UTF8_FLAG) != 0;
-
-            long stringsStart = beginPos + header.stringsStart - header.getHeaderSize();
-            position(buffer, stringsStart);
-
-            StringPool pool = new StringPool(header.stringCount);
-            long lastOffset = -1;
-            String lastValue = null;
-            for (int i = 0; i < offsets.length; i++) {
-                long offset = stringsStart + (offsets[i] & 0xffffffffL);
-                if (offset == lastOffset) {
-                    pool.set(i, lastValue);
-                    continue;
-                }
-                position(buffer, offset);
-                String value = readString(buffer, utf8);
-                pool.set(i, value);
-                lastOffset = offset;
-                lastValue = value;
-            }
-
-            position(buffer, beginPos + header.getBodySize());
-            return pool;
-        }
     }
 
     @Getter
-    private static class ChunkHeader {
-        private final int chunkType;
-        private final int headerSize;
-        private final int chunkSize;
-
-        private ChunkHeader(int chunkType, int headerSize, long chunkSize) {
-            this.chunkType = chunkType;
-            this.headerSize = headerSize;
-            this.chunkSize = ensureUInt(chunkSize);
-        }
-
-        public int getBodySize() {
-            return chunkSize - headerSize;
-        }
-    }
-
-    @Getter
+    @Setter
     private static final class ResourceTableHeader extends ChunkHeader {
-        private int packageCount;
+        private long packageCount;
 
         private ResourceTableHeader(int headerSize, long chunkSize) {
             super(ChunkType.TABLE, headerSize, chunkSize);
         }
-
-        private void setPackageCount(long packageCount) {
-            this.packageCount = ensureUInt(packageCount);
-        }
     }
 
     @Getter
-    private static final class StringPoolHeader extends ChunkHeader {
-        private static final int UTF8_FLAG = 1 << 8;
-
-        private int stringCount;
-        private int styleCount;
-        private long flags;
-        private long stringsStart;
-        private long stylesStart;
-
-        private StringPoolHeader(int headerSize, long chunkSize) {
-            super(ChunkType.STRING_POOL, headerSize, chunkSize);
-        }
-
-        private void setStringCount(long stringCount) {
-            this.stringCount = ensureUInt(stringCount);
-        }
-
-        private void setStyleCount(long styleCount) {
-            this.styleCount = ensureUInt(styleCount);
-        }
-
-        private void setFlags(long flags) {
-            this.flags = flags;
-        }
-
-        private void setStringsStart(long stringsStart) {
-            this.stringsStart = stringsStart;
-        }
-
-        private void setStylesStart(long stylesStart) {
-            this.stylesStart = stylesStart;
-        }
-    }
-
-    @Getter
+    @Setter
     private static final class PackageHeader extends ChunkHeader {
         private int id;
         private String name;
@@ -406,30 +322,6 @@ public final class ResourceTableParser {
 
         private PackageHeader(int headerSize, long chunkSize) {
             super(ChunkType.TABLE_PACKAGE, headerSize, chunkSize);
-        }
-
-        private void setId(long id) {
-            this.id = ensureUInt(id);
-        }
-
-        private void setName(String name) {
-            this.name = name;
-        }
-
-        private void setTypeStrings(long typeStrings) {
-            this.typeStrings = typeStrings;
-        }
-
-        private void setLastPublicType(long lastPublicType) {
-            this.lastPublicType = lastPublicType;
-        }
-
-        private void setKeyStrings(long keyStrings) {
-            this.keyStrings = keyStrings;
-        }
-
-        private void setLastPublicKey(long lastPublicKey) {
-            this.lastPublicKey = lastPublicKey;
         }
     }
 
@@ -463,8 +355,6 @@ public final class ResourceTableParser {
 
     @Getter
     private static final class TypeHeader extends ChunkHeader {
-        private static final long NO_ENTRY = 0xffffffffL;
-
         private int id;
         private int res0;
         private int res1;
@@ -580,23 +470,6 @@ public final class ResourceTableParser {
         }
     }
 
-    @Getter
-    private static final class StringPool {
-        private final String[] pool;
-
-        private StringPool(int poolSize) {
-            this.pool = new String[poolSize];
-        }
-
-        private String get(int idx) {
-            return pool[idx];
-        }
-
-        private void set(int idx, String value) {
-            pool[idx] = value;
-        }
-    }
-
     private static final class ResourceTable {
         private final StringPool stringPool;
         private final Map<Integer, List<ResourceEntry>> entries = new HashMap<>();
@@ -614,7 +487,7 @@ public final class ResourceTableParser {
         }
 
         private String getString(int idx) {
-            if (stringPool == null || idx < 0 || idx >= stringPool.pool.length) {
+            if (stringPool == null || idx < 0 || idx >= stringPool.size()) {
                 return null;
             }
             return stringPool.get(idx);
@@ -652,119 +525,6 @@ public final class ResourceTableParser {
             }
             return candidates.get(0);
         }
-    }
-
-    private static final class ResType {
-        private static final short NULL = 0x00;
-        private static final short REFERENCE = 0x01;
-        private static final short ATTRIBUTE = 0x02;
-        private static final short STRING = 0x03;
-    }
-
-    private static final class ChunkType {
-        private static final int NULL = 0x0000;
-        private static final int STRING_POOL = 0x0001;
-        private static final int TABLE = 0x0002;
-        private static final int TABLE_PACKAGE = 0x0200;
-        private static final int TABLE_TYPE = 0x0201;
-        private static final int TABLE_TYPE_SPEC = 0x0202;
-        private static final int TABLE_LIBRARY = 0x0203;
-        private static final int UNKNOWN = 0x0204;
-    }
-
-    private static ResourceValue readResValue(ByteBuffer buffer) {
-        readUShort(buffer);
-        readUByte(buffer);
-        short dataType = readUByte(buffer);
-        int data = buffer.getInt();
-        return new ResourceValue(dataType, data);
-    }
-
-    private static String readString(ByteBuffer buffer, boolean utf8) {
-        if (utf8) {
-            int strLen = readLength8(buffer);
-            int byteLen = readLength8(buffer);
-            byte[] bytes = new byte[byteLen];
-            buffer.get(bytes);
-            readUByte(buffer);
-            return new String(bytes, StandardCharsets.UTF_8);
-        }
-        int strLen = readLength16(buffer);
-        return readUtf16String(buffer, strLen);
-    }
-
-    private static int readLength8(ByteBuffer buffer) {
-        int len = readUByte(buffer);
-        if ((len & 0x80) != 0) {
-            len = (len & 0x7f) << 8;
-            len += readUByte(buffer);
-        }
-        return len;
-    }
-
-    private static int readLength16(ByteBuffer buffer) {
-        int len = readUShort(buffer);
-        if ((len & 0x8000) != 0) {
-            len = (len & 0x7fff) << 16;
-            len += readUShort(buffer);
-        }
-        return len;
-    }
-
-    private static String readUtf16String(ByteBuffer buffer, int strLen) {
-        StringBuilder sb = new StringBuilder(strLen);
-        for (int i = 0; i < strLen; i++) {
-            char c = buffer.getChar();
-            if (c == 0) {
-                skip(buffer, (strLen - i - 1) * 2);
-                break;
-            }
-            sb.append(c);
-        }
-        return sb.toString();
-    }
-
-    private static String readFixedUtf16String(ByteBuffer buffer, int fixedLen) {
-        StringBuilder sb = new StringBuilder(fixedLen);
-        for (int i = 0; i < fixedLen; i++) {
-            char c = buffer.getChar();
-            if (c == 0) {
-                skip(buffer, (fixedLen - i - 1) * 2);
-                break;
-            }
-            sb.append(c);
-        }
-        return sb.toString();
-    }
-
-    private static String readFixedAscii(ByteBuffer buffer, int len) {
-        byte[] bytes = new byte[len];
-        buffer.get(bytes);
-        int end = 0;
-        while (end < bytes.length && bytes[end] != 0) {
-            end++;
-        }
-        return new String(bytes, 0, end, StandardCharsets.US_ASCII);
-    }
-
-    private static short readUByte(ByteBuffer buffer) {
-        return (short) (buffer.get() & 0xff);
-    }
-
-    private static int readUShort(ByteBuffer buffer) {
-        return buffer.getShort() & 0xffff;
-    }
-
-    private static long readUInt(ByteBuffer buffer) {
-        return buffer.getInt() & 0xffffffffL;
-    }
-
-    private static void skip(ByteBuffer buffer, int count) {
-        position(buffer, buffer.position() + count);
-    }
-
-    private static void position(ByteBuffer buffer, long position) {
-        buffer.position(ensureUInt(position));
     }
 
     private static int ensureUInt(long value) {

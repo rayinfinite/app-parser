@@ -32,15 +32,127 @@ final class ManifestXmlDecoder {
         }
     }
 
-    static final class BinaryXmlParser {
-        private final ByteBuffer buffer;
+    static class Parser {
+        protected final ByteBuffer buffer;
+
+        protected Parser(byte[] data) {
+            this.buffer = ByteBuffer.wrap(data).order(ByteOrder.LITTLE_ENDIAN);
+        }
+
+        protected short readUByte() {
+            return (short) (buffer.get() & 0xff);
+        }
+
+        protected int readUShort() {
+            return buffer.getShort() & 0xffff;
+        }
+
+        protected long readUInt() {
+            return buffer.getInt() & 0xffffffffL;
+        }
+
+        protected String readString(boolean utf8) {
+            if (utf8) {
+                int strLen = readLength8();
+                int byteLen = readLength8();
+                byte[] bytes = new byte[byteLen];
+                buffer.get(bytes);
+                readUByte();
+                return new String(bytes, StandardCharsets.UTF_8);
+            }
+            int strLen = readLength16();
+            return readUtf16String(strLen);
+        }
+
+        protected int readLength8() {
+            int len = readUByte();
+            if ((len & 0x80) != 0) {
+                len = (len & 0x7f) << 8;
+                len += readUByte();
+            }
+            return len;
+        }
+
+        protected int readLength16() {
+            int len = readUShort();
+            if ((len & 0x8000) != 0) {
+                len = (len & 0x7fff) << 16;
+                len += readUShort();
+            }
+            return len;
+        }
+
+        protected String readUtf16String(int strLen) {
+            StringBuilder sb = new StringBuilder(strLen);
+            for (int i = 0; i < strLen; i++) {
+                char c = buffer.getChar();
+                if (c == 0) {
+                    skip((strLen - i - 1) * 2);
+                    break;
+                }
+                sb.append(c);
+            }
+            return sb.toString();
+        }
+
+        protected String readFixedAscii(int len) {
+            byte[] bytes = new byte[len];
+            buffer.get(bytes);
+            int end = 0;
+            while (end < bytes.length && bytes[end] != 0) {
+                end++;
+            }
+            return new String(bytes, 0, end, StandardCharsets.US_ASCII);
+        }
+
+        protected void skip(int count) {
+            position(buffer.position() + count);
+        }
+
+        protected void position(long position) {
+            buffer.position((int) position);
+        }
+
+        protected StringPool readStringPool(StringPoolHeader header) {
+            long beginPos = buffer.position();
+            int[] offsets = new int[(int) header.getStringCount()];
+            for (int i = 0; i < header.getStringCount(); i++) {
+                offsets[i] = (int) readUInt();
+            }
+            boolean utf8 = (header.getFlags() & StringPoolHeader.UTF8_FLAG) != 0;
+
+            long stringsStart = beginPos + header.getStringsStart() - header.getHeaderSize();
+            position(stringsStart);
+
+            StringPool pool = new StringPool((int) header.getStringCount());
+            long lastOffset = -1;
+            String lastValue = null;
+            for (int i = 0; i < offsets.length; i++) {
+                long offset = stringsStart + (offsets[i] & 0xffffffffL);
+                if (offset == lastOffset) {
+                    pool.set(i, lastValue);
+                    continue;
+                }
+                position(offset);
+                String value = readString(utf8);
+                pool.set(i, value);
+                lastOffset = offset;
+                lastValue = value;
+            }
+
+            position(beginPos + header.getBodySize());
+            return pool;
+        }
+    }
+
+    static final class BinaryXmlParser extends Parser {
         private final ResourceResolver resolver;
         private StringPool stringPool;
         private long[] resourceMap;
         private final XmlTranslator translator = new XmlTranslator();
 
         private BinaryXmlParser(byte[] data, ResourceResolver resolver) {
-            this.buffer = ByteBuffer.wrap(data).order(ByteOrder.LITTLE_ENDIAN);
+            super(data);
             this.resolver = resolver;
         }
 
@@ -95,7 +207,7 @@ final class ManifestXmlDecoder {
                         }
                         break;
                 }
-                position(buffer, bodyStart + chunkHeader.getBodySize());
+                position(bodyStart + chunkHeader.getBodySize());
                 chunkHeader = readChunkHeader();
             }
 
@@ -124,12 +236,12 @@ final class ManifestXmlDecoder {
             String namespace = getString(nsRef);
             String name = getString(nameRef);
 
-            int attributeStart = readUShort(buffer);
-            int attributeSize = readUShort(buffer);
-            int attributeCount = readUShort(buffer);
-            int idIndex = readUShort(buffer);
-            int classIndex = readUShort(buffer);
-            int styleIndex = readUShort(buffer);
+            int attributeStart = readUShort();
+            int attributeSize = readUShort();
+            int attributeCount = readUShort();
+            int idIndex = readUShort();
+            int classIndex = readUShort();
+            int styleIndex = readUShort();
 
             List<XmlAttribute> attributes = new ArrayList<>(attributeCount);
             for (int i = 0; i < attributeCount; i++) {
@@ -149,7 +261,7 @@ final class ManifestXmlDecoder {
         private void readCData() {
             int dataRef = buffer.getInt();
             String data = getString(dataRef);
-            readResValue(buffer);
+            readResValue();
             if (data != null) {
                 translator.onCData(data);
             }
@@ -163,7 +275,7 @@ final class ManifestXmlDecoder {
             String namespace = getString(nsRef);
             String name = getAttributeName(nameRef);
             String rawValue = rawValueRef >= 0 ? getString(rawValueRef) : null;
-            ResValue resValue = readResValue(buffer);
+            ResValue resValue = readResValue();
 
             String value = rawValue != null ? rawValue : resValue.toStringValue(stringPool, resolver);
             if (attributeValueMapper != null) {
@@ -201,40 +313,9 @@ final class ManifestXmlDecoder {
             int count = header.getBodySize() / 4;
             long[] ids = new long[count];
             for (int i = 0; i < count; i++) {
-                ids[i] = readUInt(buffer);
+                ids[i] = readUInt();
             }
             return ids;
-        }
-
-        private StringPool readStringPool(StringPoolHeader header) {
-            long beginPos = buffer.position();
-            int[] offsets = new int[header.getStringCount()];
-            for (int i = 0; i < header.getStringCount(); i++) {
-                offsets[i] = (int) readUInt(buffer);
-            }
-            boolean utf8 = (header.getFlags() & StringPoolHeader.UTF8_FLAG) != 0;
-
-            long stringsStart = beginPos + header.getStringsStart() - header.getHeaderSize();
-            position(buffer, stringsStart);
-
-            StringPool pool = new StringPool(header.getStringCount());
-            long lastOffset = -1;
-            String lastValue = null;
-            for (int i = 0; i < offsets.length; i++) {
-                long offset = stringsStart + (offsets[i] & 0xffffffffL);
-                if (offset == lastOffset) {
-                    pool.set(i, lastValue);
-                    continue;
-                }
-                position(buffer, offset);
-                String value = readString(buffer, utf8);
-                pool.set(i, value);
-                lastOffset = offset;
-                lastValue = value;
-            }
-
-            position(buffer, beginPos + header.getBodySize());
-            return pool;
         }
 
         private ChunkHeader readChunkHeader() {
@@ -242,91 +323,80 @@ final class ManifestXmlDecoder {
                 return null;
             }
             int begin = buffer.position();
-            int chunkType = readUShort(buffer);
-            int headerSize = readUShort(buffer);
-            long chunkSize = readUInt(buffer);
+            int chunkType = readUShort();
+            int headerSize = readUShort();
+            long chunkSize = readUInt();
 
             switch (chunkType) {
                 case ChunkType.STRING_POOL:
                     StringPoolHeader header = new StringPoolHeader(headerSize, chunkSize);
-                    header.setStringCount(readUInt(buffer));
-                    header.setStyleCount(readUInt(buffer));
-                    header.setFlags(readUInt(buffer));
-                    header.setStringsStart(readUInt(buffer));
-                    header.setStylesStart(readUInt(buffer));
-                    position(buffer, begin + headerSize);
+                    header.setStringCount(readUInt());
+                    header.setStyleCount(readUInt());
+                    header.setFlags(readUInt());
+                    header.setStringsStart(readUInt());
+                    header.setStylesStart(readUInt());
+                    position(begin + headerSize);
                     return header;
                 case ChunkType.XML_RESOURCE_MAP:
-                    position(buffer, begin + headerSize);
+                    position(begin + headerSize);
                     return new ChunkHeader(chunkType, headerSize, chunkSize);
                 case ChunkType.XML_START_NAMESPACE:
                 case ChunkType.XML_END_NAMESPACE:
                 case ChunkType.XML_START_ELEMENT:
                 case ChunkType.XML_END_ELEMENT:
                 case ChunkType.XML_CDATA:
-                    readUInt(buffer);
-                    readUInt(buffer);
-                    position(buffer, begin + headerSize);
+                    readUInt();
+                    readUInt();
+                    position(begin + headerSize);
                     return new ChunkHeader(chunkType, headerSize, chunkSize);
                 case ChunkType.XML:
                 case ChunkType.NULL:
-                    position(buffer, begin + headerSize);
+                    position(begin + headerSize);
                     return new ChunkHeader(chunkType, headerSize, chunkSize);
                 default:
                     throw new ManifestXmlException("Unexpected chunk type: " + chunkType);
             }
         }
+
+        private ResValue readResValue() {
+            readUShort();
+            readUByte();
+            short dataType = readUByte();
+            int data = buffer.getInt();
+            return new ResValue(dataType, data);
+        }
     }
 
     @Getter
-    private static class ChunkHeader {
+    public static class ChunkHeader {
         private final int chunkType;
         private final int headerSize;
-        private final int chunkSize;
+        private final long chunkSize;
 
-        private ChunkHeader(int chunkType, int headerSize, long chunkSize) {
+        public ChunkHeader(int chunkType, int headerSize, long chunkSize) {
             this.chunkType = chunkType;
             this.headerSize = headerSize;
-            this.chunkSize = ensureUInt(chunkSize);
+            this.chunkSize = chunkSize;
         }
 
         public int getBodySize() {
-            return chunkSize - headerSize;
+            return (int) (chunkSize - headerSize);
         }
     }
 
+    @Setter
     @Getter
-    private static final class StringPoolHeader extends ChunkHeader {
+    public static final class StringPoolHeader extends ChunkHeader {
         public static final int UTF8_FLAG = 1 << 8;
 
-        private int stringCount;
-        private int styleCount;
+        private long stringCount;
+        private long styleCount;
         private long flags;
         private long stringsStart;
         private long stylesStart;
 
-        private StringPoolHeader(int headerSize, long chunkSize) {
+        public StringPoolHeader(int headerSize, long chunkSize) {
             super(ChunkType.STRING_POOL, headerSize, chunkSize);
-        }
-
-        private void setStringCount(long stringCount) {
-            this.stringCount = ensureUInt(stringCount);
-        }
-
-        private void setStyleCount(long styleCount) {
-            this.styleCount = ensureUInt(styleCount);
-        }
-
-        private void setFlags(long flags) {
-            this.flags = flags;
-        }
-
-        private void setStringsStart(long stringsStart) {
-            this.stringsStart = stringsStart;
-        }
-
-        private void setStylesStart(long stylesStart) {
-            this.stylesStart = stylesStart;
         }
     }
 
@@ -558,37 +628,41 @@ final class ManifestXmlDecoder {
     }
 
     @Getter
-    private static final class StringPool {
+    public static final class StringPool {
         private final String[] pool;
 
-        private StringPool(int poolSize) {
+        public StringPool(int poolSize) {
             this.pool = new String[poolSize];
         }
 
-        private String get(int idx) {
+        public String get(int idx) {
             return pool[idx];
         }
 
-        private void set(int idx, String value) {
+        public void set(int idx, String value) {
             pool[idx] = value;
+        }
+
+        public int size() {
+            return pool.length;
         }
     }
 
-    private static final class ResType {
-        private static final short NULL = 0x00;
-        private static final short REFERENCE = 0x01;
-        private static final short ATTRIBUTE = 0x02;
-        private static final short STRING = 0x03;
-        private static final short FLOAT = 0x04;
-        private static final short DIMENSION = 0x05;
-        private static final short FRACTION = 0x06;
-        private static final short INT_DEC = 0x10;
-        private static final short INT_HEX = 0x11;
-        private static final short INT_BOOLEAN = 0x12;
-        private static final short INT_COLOR_ARGB8 = 0x1c;
-        private static final short INT_COLOR_RGB8 = 0x1d;
-        private static final short INT_COLOR_ARGB4 = 0x1e;
-        private static final short INT_COLOR_RGB4 = 0x1f;
+    public static final class ResType {
+        public static final short NULL = 0x00;
+        public static final short REFERENCE = 0x01;
+        public static final short ATTRIBUTE = 0x02;
+        public static final short STRING = 0x03;
+        public static final short FLOAT = 0x04;
+        public static final short DIMENSION = 0x05;
+        public static final short FRACTION = 0x06;
+        public static final short INT_DEC = 0x10;
+        public static final short INT_HEX = 0x11;
+        public static final short INT_BOOLEAN = 0x12;
+        public static final short INT_COLOR_ARGB8 = 0x1c;
+        public static final short INT_COLOR_RGB8 = 0x1d;
+        public static final short INT_COLOR_ARGB4 = 0x1e;
+        public static final short INT_COLOR_RGB4 = 0x1f;
     }
 
     private static final class ResValueUnits {
@@ -602,97 +676,26 @@ final class ManifestXmlDecoder {
         private static final short UNIT_FRACTION_PARENT = 1;
     }
 
-    private static final class ChunkType {
-        private static final int NULL = 0x0000;
-        private static final int STRING_POOL = 0x0001;
-        private static final int XML = 0x0003;
-        private static final int XML_FIRST_CHUNK = 0x0100;
-        private static final int XML_START_NAMESPACE = 0x0100;
-        private static final int XML_END_NAMESPACE = 0x0101;
-        private static final int XML_START_ELEMENT = 0x0102;
-        private static final int XML_END_ELEMENT = 0x0103;
-        private static final int XML_CDATA = 0x0104;
-        private static final int XML_LAST_CHUNK = 0x017f;
-        private static final int XML_RESOURCE_MAP = 0x0180;
-    }
+    public static final class ChunkType {
+        public static final int NULL = 0x0000;
+        public static final int STRING_POOL = 0x0001;
+        public static final int TABLE = 0x0002;
+        public static final int XML = 0x0003;
 
-    private static ResValue readResValue(ByteBuffer buffer) {
-        readUShort(buffer);
-        readUByte(buffer);
-        short dataType = readUByte(buffer);
-        int data = buffer.getInt();
-        return new ResValue(dataType, data);
-    }
+        public static final int XML_FIRST_CHUNK = 0x0100;
+        public static final int XML_START_NAMESPACE = 0x0100;
+        public static final int XML_END_NAMESPACE = 0x0101;
+        public static final int XML_START_ELEMENT = 0x0102;
+        public static final int XML_END_ELEMENT = 0x0103;
+        public static final int XML_CDATA = 0x0104;
+        public static final int XML_LAST_CHUNK = 0x017f;
+        public static final int XML_RESOURCE_MAP = 0x0180;
 
-    private static String readString(ByteBuffer buffer, boolean utf8) {
-        if (utf8) {
-            int strLen = readLength8(buffer);
-            int byteLen = readLength8(buffer);
-            byte[] bytes = new byte[byteLen];
-            buffer.get(bytes);
-            readUByte(buffer);
-            return new String(bytes, StandardCharsets.UTF_8);
-        }
-        int strLen = readLength16(buffer);
-        return readUtf16String(buffer, strLen);
-    }
-
-    private static int readLength8(ByteBuffer buffer) {
-        int len = readUByte(buffer);
-        if ((len & 0x80) != 0) {
-            len = (len & 0x7f) << 8;
-            len += readUByte(buffer);
-        }
-        return len;
-    }
-
-    private static int readLength16(ByteBuffer buffer) {
-        int len = readUShort(buffer);
-        if ((len & 0x8000) != 0) {
-            len = (len & 0x7fff) << 16;
-            len += readUShort(buffer);
-        }
-        return len;
-    }
-
-    private static String readUtf16String(ByteBuffer buffer, int strLen) {
-        StringBuilder sb = new StringBuilder(strLen);
-        for (int i = 0; i < strLen; i++) {
-            char c = buffer.getChar();
-            if (c == 0) {
-                skip(buffer, (strLen - i - 1) * 2);
-                break;
-            }
-            sb.append(c);
-        }
-        return sb.toString();
-    }
-
-    private static short readUByte(ByteBuffer buffer) {
-        return (short) (buffer.get() & 0xff);
-    }
-
-    private static int readUShort(ByteBuffer buffer) {
-        return buffer.getShort() & 0xffff;
-    }
-
-    private static long readUInt(ByteBuffer buffer) {
-        return buffer.getInt() & 0xffffffffL;
-    }
-
-    private static void skip(ByteBuffer buffer, int count) {
-        position(buffer, buffer.position() + count);
-    }
-
-    private static void position(ByteBuffer buffer, long position) {
-        buffer.position(ensureUInt(position));
-    }
-
-    private static int ensureUInt(long value) {
-        if (value < 0 || value > Integer.MAX_VALUE) {
-            throw new ManifestXmlException("unsigned int overflow");
-        }
-        return (int) value;
+        public static final int TABLE_PACKAGE = 0x0200;
+        public static final int TABLE_TYPE = 0x0201;
+        public static final int TABLE_TYPE_SPEC = 0x0202;
+        public static final int TABLE_LIBRARY = 0x0203;
+        public static final int UNKNOWN = 0x0204;
     }
 
     private static String escapeXml(String value) {
