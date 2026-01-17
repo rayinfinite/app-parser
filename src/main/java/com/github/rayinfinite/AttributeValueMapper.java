@@ -6,6 +6,10 @@ import java.util.Map;
 import java.util.concurrent.ConcurrentHashMap;
 import java.util.function.Function;
 
+/**
+ * Map integer attribute values to their human-readable names,
+ * matching apk-parser's behavior for common manifest attributes.
+ */
 final class AttributeValueMapper {
     private static final Map<String, Function<Integer, String>> MAPPERS = new ConcurrentHashMap<>();
     private static final String[] SCREEN_ORIENTATION = {"landscape", "portrait", "user", "behind", "sensor",
@@ -36,6 +40,9 @@ final class AttributeValueMapper {
     private AttributeValueMapper() {
     }
 
+    /**
+     * Map an attribute value if the attribute is registered and the value is numeric.
+     */
     static String mapIfNeeded(String attributeName, String value) {
         if (attributeName == null || value == null || attributeName.isEmpty()) {
             return value;
@@ -59,6 +66,9 @@ final class AttributeValueMapper {
         }
     }
 
+    /**
+     * Register a custom mapper for an attribute name.
+     */
     static void register(String attributeName, Function<Integer, String> mapper) {
         if (attributeName == null || mapper == null) {
             return;

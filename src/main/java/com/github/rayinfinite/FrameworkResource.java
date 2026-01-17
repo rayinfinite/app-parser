@@ -9,6 +9,10 @@ import java.util.Collections;
 import java.util.HashMap;
 import java.util.Map;
 
+/**
+ * Loads a minimal set of Android framework resources for style resolution.
+ * Data source: {@code /r_styles.ini}.
+ */
 final class FrameworkResource {
     private static final int SYS_STYLE_ID_START = 0x01030000;
     private static final int SYS_STYLE_ID_END = 0x01031000;
@@ -17,6 +21,9 @@ final class FrameworkResource {
     private FrameworkResource() {
     }
 
+    /**
+     * Resolve framework style ids to "@android:style/..." references.
+     */
     static String resolveAndroidStyle(long resId) {
         if (resId <= SYS_STYLE_ID_START || resId >= SYS_STYLE_ID_END) {
             return null;

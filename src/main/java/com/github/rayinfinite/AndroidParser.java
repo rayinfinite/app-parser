@@ -12,6 +12,10 @@ import java.util.Map;
 import java.util.zip.ZipEntry;
 import java.util.zip.ZipFile;
 
+/**
+ * Lightweight AndroidManifest.xml decoder inspired by apk-parser.
+ * Provides helpers to load the manifest from an APK and resolve resource references.
+ */
 public final class AndroidParser {
     public static final String MANIFEST_PATH = "AndroidManifest.xml";
     public static final String RESOURCE_FILE = "resources.arsc";
@@ -24,10 +28,10 @@ public final class AndroidParser {
     }
 
     /**
-     * decode type
+     * Decode type:
      * 0: without resources
-     * 1: resolve to param
-     * 2: resolve to Locale.getDefault()
+     * 1: resolve to resource id or value depending on resolver
+     * 2: resolve using resources.arsc and Locale.getDefault()
      */
     public static String decode(File apkFile, int type) {
         if (apkFile == null) {
@@ -49,21 +53,27 @@ public final class AndroidParser {
         Map<String, byte[]> files = readFiles(apkFile, MANIFEST_PATH, RESOURCE_FILE);
         byte[] manifestBytes = files.get(MANIFEST_PATH);
         if (manifestBytes == null) {
-            throw new ManifestXmlDecoder.ManifestXmlException("Manifest file not found: " + MANIFEST_PATH);
+            throw new IllegalArgumentException("Manifest file not found: " + MANIFEST_PATH);
         }
         byte[] resourcesBytes = files.get(RESOURCE_FILE);
         return decodeFromManifest(manifestBytes, ResourceTableParser.fromResources(resourcesBytes, resolveToValue));
     }
 
+    /**
+     * Decode manifest bytes with a custom resource resolver.
+     */
     public static String decode(File apkFile, ManifestXmlDecoder.ResourceResolver resolver) {
         Map<String, byte[]> files = readFiles(apkFile, MANIFEST_PATH);
         byte[] manifestBytes = files.get(MANIFEST_PATH);
         if (manifestBytes == null) {
-            throw new ManifestXmlDecoder.ManifestXmlException("Manifest file not found: " + MANIFEST_PATH);
+            throw new IllegalArgumentException("Manifest file not found: " + MANIFEST_PATH);
         }
         return decodeFromManifest(manifestBytes, resolver);
     }
 
+    /**
+     * Read specific entries from an APK zip into memory.
+     */
     public static Map<String, byte[]> readFiles(File apkFile, String... paths) {
         if (apkFile == null) {
             throw new IllegalArgumentException("apkFile is null");
@@ -87,7 +97,7 @@ public final class AndroidParser {
                 }
             }
         } catch (IOException e) {
-            throw new ManifestXmlDecoder.ManifestXmlException(e);
+            throw new IllegalArgumentException(e);
         }
         return result;
     }
@@ -96,6 +106,9 @@ public final class AndroidParser {
         return decodeFromManifest(manifestBytes, null);
     }
 
+    /**
+     * Decode a binary AndroidManifest.xml payload.
+     */
     public static String decodeFromManifest(byte[] manifestBytes, ManifestXmlDecoder.ResourceResolver resolver) {
         if (attributeValueMappingEnabled) {
             ManifestXmlDecoder.setAttributeValueMapper(AttributeValueMapper::mapIfNeeded);

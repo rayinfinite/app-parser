@@ -16,13 +16,25 @@ import com.github.rayinfinite.ManifestXmlDecoder.ResType;
 import com.github.rayinfinite.ManifestXmlDecoder.StringPool;
 import com.github.rayinfinite.ManifestXmlDecoder.StringPoolHeader;
 
+/**
+ * Parse resources.arsc to resolve resource ids inside AndroidManifest.xml.
+ * This is a minimal subset aligned with apk-parser's resource table handling.
+ */
 @NoArgsConstructor(access = AccessLevel.PRIVATE)
 public final class ResourceTableParser {
 
+    /**
+     * Build a resolver for resources.arsc with value resolution enabled.
+     */
     public static ManifestXmlDecoder.ResourceResolver fromResources(byte[] resourcesBytes) {
         return fromResources(resourcesBytes, true);
     }
 
+    /**
+     * Build a resolver for resources.arsc.
+     *
+     * @param resolveToValue true to resolve resource ids to actual strings, false to keep "@type/key"
+     */
     public static ManifestXmlDecoder.ResourceResolver fromResources(byte[] resourcesBytes, boolean resolveToValue) {
         if (resourcesBytes == null) {
             return new EmptyResolver();
@@ -91,6 +103,9 @@ public final class ResourceTableParser {
     private static final class EmptyResolver implements ManifestXmlDecoder.ResourceResolver {
     }
 
+    /**
+     * Parse the binary resource table format and extract string values.
+     */
     private static final class Parser extends ManifestXmlDecoder.Parser {
         private Parser(byte[] data) {
             super(data);

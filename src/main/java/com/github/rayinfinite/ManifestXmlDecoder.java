@@ -9,6 +9,10 @@ import java.util.ArrayList;
 import java.util.List;
 import java.util.function.BiFunction;
 
+/**
+ * Decode Android binary XML (AndroidManifest.xml) into text XML.
+ * The implementation mirrors apk-parser's binary xml parsing pipeline.
+ */
 @NoArgsConstructor(access = AccessLevel.PRIVATE)
 final class ManifestXmlDecoder {
     @Setter
@@ -26,6 +30,9 @@ final class ManifestXmlDecoder {
         return parser.parse();
     }
 
+    /**
+     * Resolve resource ids or attribute ids encountered in the manifest.
+     */
     public interface ResourceResolver {
         default String resolveReference(long resId) {
             return null;
@@ -36,6 +43,9 @@ final class ManifestXmlDecoder {
         }
     }
 
+    /**
+     * Shared binary parser helpers.
+     */
     static class Parser {
         protected final ByteBuffer buffer;
 
@@ -149,6 +159,9 @@ final class ManifestXmlDecoder {
         }
     }
 
+    /**
+     * Parser for binary XML chunks used by AndroidManifest.xml.
+     */
     static final class BinaryXmlParser extends Parser {
         private final ResourceResolver resolver;
         private StringPool stringPool;
