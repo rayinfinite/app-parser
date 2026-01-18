@@ -22,7 +22,7 @@ final class AttributeValueMapper {
     private static final String[] WINDOW_INPUT_STATE = {"", "stateUnchanged", "stateHidden",
             "stateAlwaysHidden", "stateVisible", "stateAlwaysVisible", "stateUnspecified"};
     private static final String[] WINDOW_INPUT_ADJUST = {"", "adjustResize", "adjustPan", "adjustNothing"};
-    // 按 CONFIG_* 位索引升序排列的名字列表（索引 i 对应 bit i，即 mask = 1 << i）
+    // Names list ordered by CONFIG_* bit index ascending (index i corresponds to bit i, i.e. mask = 1 << i)
     private static final String[] CONFIG_CHANGES = {"mcc", "mnc", "locale", "touchscreen", "keyboard",
             "keyboardHidden", "navigation", "orientation", "screenLayout", "uiMode", "screenSize",
             "smallestScreenSize", "density", "direction"};
@@ -93,14 +93,14 @@ final class AttributeValueMapper {
     private static String getConfigChanges(int value) {
         List<String> parts = new ArrayList<>();
 
-        // 遍历所有已定义的低比特位（0 ～ 13）
+        // Iterate through all defined low-bit positions (0–13)
         for (int i = 0; i < CONFIG_CHANGES.length; i++) {
             if ((value & (1 << i)) != 0) {
                 parts.add(CONFIG_CHANGES[i]);
             }
         }
 
-        // 单独处理 fontScale：它位于 bit 30
+        // Handle fontScale separately: it's located at bit 30
         if ((value & 0x40000000) != 0) {
             parts.add("fontScale");
         }
@@ -142,14 +142,14 @@ final class AttributeValueMapper {
     }
 
     public static boolean isHex(String value) {
-        // 去除可选前缀
+        // Remove optional prefix
         if (value.startsWith("0x") || value.startsWith("0X")) {
             value = value.substring(2);
         }
         if (value.isEmpty()) {
             return false;
         }
-        // 检查每个字符是否为 [0-9a-fA-F]
+        // Check each character is in [0-9a-fA-F]
         for (int i = 0; i < value.length(); i++) {
             char c = value.charAt(i);
             if ((c < '0' || c > '9') && (c < 'a' || c > 'f') && (c < 'A' || c > 'F')) {
