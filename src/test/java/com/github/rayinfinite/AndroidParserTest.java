@@ -1,6 +1,5 @@
 package com.github.rayinfinite;
 
-import net.dongliu.apk.parser.ApkFile;
 import org.junit.jupiter.api.Assertions;
 import org.junit.jupiter.api.Test;
 
@@ -23,10 +22,10 @@ public class AndroidParserTest {
         for (String apkName : APK_NAMES) {
             File apkFile = resourceFile(apkName);
             String expected;
-            try (ApkFile parser = new ApkFile(apkFile)) {
+            try (net.dongliu.apk.parser.ApkFile parser = new net.dongliu.apk.parser.ApkFile(apkFile)) {
                 expected = parser.getManifestXml();
             }
-            String actual = AndroidParser.decode(apkFile, 0);
+            String actual = ApkFile.decode(apkFile, 0);
             Assertions.assertEquals(expected, actual, "Manifest mismatch: " + apkName);
         }
     }
@@ -36,13 +35,13 @@ public class AndroidParserTest {
         String apkName = "Twitter_v7.93.2.apk";
         File apkFile = resourceFile(apkName);
         String expected;
-        try (ApkFile parser = new ApkFile(apkFile)) {
+        try (net.dongliu.apk.parser.ApkFile parser = new net.dongliu.apk.parser.ApkFile(apkFile)) {
             expected = parser.getManifestXml();
         }
         String expectedTwitter = resourceFileString("OldTwitterAndroidManifest.xml");
         Assertions.assertEquals(expectedTwitter, expected, "Manifest mismatch: " + apkName);
 
-        String actual = AndroidParser.decode(apkFile, 0);
+        String actual = ApkFile.decode(apkFile, 0);
         String actualTwitter = resourceFileString("AndroidManifest.xml");
         Assertions.assertEquals(actualTwitter, actual, "Manifest mismatch: " + apkName);
     }
@@ -52,7 +51,7 @@ public class AndroidParserTest {
         String apkName = "Twitter_v7.93.2.apk";
         File apkFile = resourceFile(apkName);
 
-        String actual = AndroidParser.decode(apkFile);
+        String actual = ApkFile.decode(apkFile);
         String actualTwitter = resourceFileString("real.xml");
         Assertions.assertEquals(XmlFormatter.format(actualTwitter), XmlFormatter.format(actual), "Manifest mismatch: " + apkName);
     }
